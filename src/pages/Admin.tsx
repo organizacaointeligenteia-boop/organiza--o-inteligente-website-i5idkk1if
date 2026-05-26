@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -6,22 +6,28 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
-import useArticlesStore from '@/stores/use-articles-store'
-import { Trash2, Edit, Plus } from 'lucide-react'
+import { getArticles, createArticle, deleteArticle, type Article } from '@/services/articles'
+import { useAuth } from '@/hooks/use-auth'
+import { getErrorMessage } from '@/lib/pocketbase/errors'
+import { Trash2, Edit, Plus, LogOut } from 'lucide-react'
 
 export default function Admin() {
   usePageTitle('Administração')
-  const { articles, addArticle, deleteArticle } = useArticlesStore()
+  const { signOut } = useAuth()
+  const [articles, setArticles] = useState<Article[]>([])
   const { toast } = useToast()
+
+  useEffect(() => {
+    getArticles().then(setArticles).catch(console.error)
+  }, [])
 
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
     excerpt: '',
     content: '',
-    date: new Date().toISOString().split('T')[0],
-    image: 'https://img.usecurling.com/p/800/400?q=office&dpr=2',
-    category: 'Geral',
+    featuredImage: 'https://img.usecurling.com/p/800/400?q=office&dpr=2',
+    category: 'Produtividade',
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -38,23 +44,38 @@ export default function Admin() {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    addArticle(formData)
-    toast({ title: 'Artigo adicionado', description: 'O artigo foi salvo localmente com sucesso.' })
-    setFormData({
-      ...formData,
-      title: '',
-      slug: '',
-      excerpt: '',
-      content: '',
-    })
+    try {
+      const newArticle = await createArticle({
+        ...formData,
+        publishedAt: new Date().toISOString(),
+      })
+      setArticles([newArticle, ...articles])
+      toast({ title: 'Artigo adicionado', description: 'O artigo foi salvo com sucesso.' })
+      setFormData({ ...formData, title: '', slug: '', excerpt: '', content: '' })
+    } catch (err) {
+      toast({ title: 'Erro ao salvar', description: getErrorMessage(err), variant: 'destructive' })
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteArticle(id)
+      setArticles(articles.filter((a) => a.id !== id))
+      toast({ title: 'Artigo removido' })
+    } catch (err) {
+      toast({ title: 'Erro ao remover', description: getErrorMessage(err), variant: 'destructive' })
+    }
   }
 
   return (
     <div className="space-y-8 animate-fade-in py-6">
       <div className="flex justify-between items-center border-b pb-4">
         <h1 className="text-3xl font-bold tracking-tight">Painel de Administração</h1>
+        <Button variant="outline" onClick={signOut} className="gap-2">
+          <LogOut className="h-4 w-4" /> Sair
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -98,22 +119,11 @@ export default function Admin() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="date">Data</Label>
+                <Label htmlFor="featuredImage">URL da Imagem</Label>
                 <Input
-                  id="date"
-                  name="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="image">URL da Imagem</Label>
-                <Input
-                  id="image"
-                  name="image"
-                  value={formData.image}
+                  id="featuredImage"
+                  name="featuredImage"
+                  value={formData.featuredImage}
                   onChange={handleChange}
                   required
                 />
@@ -125,7 +135,6 @@ export default function Admin() {
                   name="excerpt"
                   value={formData.excerpt}
                   onChange={handleChange}
-                  required
                   className="h-20"
                 />
               </div>
@@ -181,7 +190,7 @@ export default function Admin() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => deleteArticle(article.id)}
+                        onClick={() => handleDelete(article.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

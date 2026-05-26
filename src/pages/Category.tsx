@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/hooks/use-page-title'
-import useArticlesStore from '@/stores/use-articles-store'
+import { getArticles, type Article } from '@/services/articles'
 import { ArrowRight } from 'lucide-react'
 
 interface Props {
@@ -11,7 +12,11 @@ interface Props {
 
 export default function Category({ title }: Props) {
   usePageTitle(title)
-  const { articles } = useArticlesStore()
+  const [articles, setArticles] = useState<Article[]>([])
+
+  useEffect(() => {
+    getArticles().then(setArticles).catch(console.error)
+  }, [])
 
   const categoryArticles = articles.filter((a) => a.category === title).slice(0, 3)
   const fallbackArticles = articles.slice(0, 3)
@@ -34,11 +39,13 @@ export default function Category({ title }: Props) {
             className="flex flex-col overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-elevation"
           >
             <div className="h-48 overflow-hidden bg-muted">
-              <img
-                src={article.image}
-                alt={article.title}
-                className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-              />
+              {article.featuredImage && (
+                <img
+                  src={article.featuredImage}
+                  alt={article.title}
+                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                />
+              )}
             </div>
             <CardHeader className="flex-1">
               <CardTitle className="text-xl leading-tight">{article.title}</CardTitle>
@@ -59,7 +66,7 @@ export default function Category({ title }: Props) {
         ))}
       </div>
 
-      {categoryArticles.length === 0 && (
+      {categoryArticles.length === 0 && displayArticles.length > 0 && (
         <p className="text-sm text-muted-foreground italic">
           Exibindo artigos recentes como sugestão.
         </p>

@@ -1,13 +1,18 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/hooks/use-page-title'
-import useArticlesStore from '@/stores/use-articles-store'
+import { getArticles, type Article } from '@/services/articles'
 import { ArrowRight, Calendar } from 'lucide-react'
 
 export default function Blog() {
   usePageTitle('Blog')
-  const { articles } = useArticlesStore()
+  const [articles, setArticles] = useState<Article[]>([])
+
+  useEffect(() => {
+    getArticles().then(setArticles).catch(console.error)
+  }, [])
 
   return (
     <div className="space-y-10 animate-fade-in">
@@ -25,11 +30,13 @@ export default function Blog() {
             className="flex flex-col overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-elevation"
           >
             <div className="h-48 overflow-hidden bg-muted relative group">
-              <img
-                src={article.image}
-                alt={article.title}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-              />
+              {article.featuredImage && (
+                <img
+                  src={article.featuredImage}
+                  alt={article.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                />
+              )}
               <div className="absolute top-4 left-4 bg-background/90 backdrop-blur px-3 py-1 rounded-full text-xs font-semibold text-primary">
                 {article.category}
               </div>
@@ -37,7 +44,7 @@ export default function Blog() {
             <CardHeader className="flex-1">
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
                 <Calendar className="h-3 w-3" />
-                {new Date(article.date).toLocaleDateString('pt-BR')}
+                {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
               </div>
               <CardTitle className="text-xl leading-snug hover:text-primary transition-colors">
                 <Link to={`/blog/${article.slug}`}>{article.title}</Link>
@@ -57,18 +64,6 @@ export default function Blog() {
             </CardFooter>
           </Card>
         ))}
-      </div>
-
-      <div className="flex justify-center items-center py-8">
-        <div className="flex gap-2">
-          <Button variant="outline" disabled>
-            Anterior
-          </Button>
-          <span className="flex items-center px-4 text-sm font-medium text-muted-foreground">
-            Página 1 de 3
-          </span>
-          <Button variant="outline">Próxima</Button>
-        </div>
       </div>
     </div>
   )

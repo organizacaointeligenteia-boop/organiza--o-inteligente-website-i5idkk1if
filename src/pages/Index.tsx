@@ -1,30 +1,51 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { usePageTitle } from '@/hooks/use-page-title'
-import useArticlesStore from '@/stores/use-articles-store'
-import { mockTools } from '@/lib/mock-data'
 import { useToast } from '@/hooks/use-toast'
-import { ArrowRight, Download } from 'lucide-react'
+import { getArticles, type Article } from '@/services/articles'
+import { getDownloads, type Download } from '@/services/downloads'
+import pb from '@/lib/pocketbase/client'
+import { ArrowRight, Download as DownloadIcon } from 'lucide-react'
 
 export default function Index() {
   usePageTitle('Home')
-  const { articles } = useArticlesStore()
   const { toast } = useToast()
 
-  const featuredArticles = articles.slice(0, 4)
+  const [articles, setArticles] = useState<Article[]>([])
+  const [tools, setTools] = useState<Download[]>([])
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  useEffect(() => {
+    getArticles()
+      .then((data) => setArticles(data.slice(0, 4)))
+      .catch(console.error)
+    getDownloads()
+      .then((data) => setTools(data.slice(0, 4)))
+      .catch(console.error)
+  }, [])
+
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast({ title: 'Tudo pronto!', description: 'Você agora faz parte da nossa comunidade.' })
+    const formData = new FormData(e.target as HTMLFormElement)
+    try {
+      const res = await pb.send('/backend/v1/newsletter/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email: formData.get('email'), name: formData.get('name') }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (res.success) {
+        toast({ title: 'Tudo pronto!', description: res.message })
+        ;(e.target as HTMLFormElement).reset()
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Erro',
+        description: err.response?.message || 'Erro ao processar',
+        variant: 'destructive',
+      })
+    }
   }
 
   return (
@@ -59,17 +80,19 @@ export default function Index() {
           </Button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredArticles.map((article) => (
+          {articles.map((article) => (
             <Card
               key={article.id}
               className="flex flex-col overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-elevation"
             >
-              <div className="h-48 overflow-hidden">
-                <img
-                  src={article.image}
-                  alt={article.title}
-                  className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                />
+              <div className="h-48 overflow-hidden bg-muted">
+                {article.featuredImage && (
+                  <img
+                    src={article.featuredImage}
+                    alt={article.title}
+                    className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                  />
+                )}
               </div>
               <CardHeader className="flex-1">
                 <div className="text-xs text-primary font-medium mb-2">{article.category}</div>
@@ -96,22 +119,22 @@ export default function Index() {
       <section className="space-y-8 bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-16 rounded-3xl">
         <h2 className="text-2xl md:text-3xl font-bold">Ferramentas Gratuitas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {mockTools.map((tool) => (
+          {tools.map((tool) => (
             <Card
               key={tool.id}
               className="flex flex-col bg-background transition-all duration-200 hover:-translate-y-1 hover:shadow-elevation"
             >
               <CardHeader className="flex-1">
-                <CardTitle className="text-lg">{tool.name}</CardTitle>
+                <CardTitle className="text-lg">{tool.title}</CardTitle>
                 <CardDescription className="mt-2">{tool.description}</CardDescription>
               </CardHeader>
               <CardFooter>
                 <Button
                   variant="secondary"
                   className="w-full gap-2"
-                  onClick={() => toast({ title: 'Download iniciado' })}
+                  onClick={() => toast({ title: 'Download indisponível no mock' })}
                 >
-                  <Download className="h-4 w-4" /> Baixar
+                  <DownloadIcon className="h-4 w-4" /> Baixar
                 </Button>
               </CardFooter>
             </Card>
@@ -135,8 +158,14 @@ export default function Index() {
             onSubmit={handleSubscribe}
             className="flex flex-col sm:flex-row gap-3 max-w-[500px] mx-auto"
           >
-            <Input type="text" placeholder="Seu nome" required className="bg-background" />
-            <Input type="email" placeholder="Seu email" required className="bg-background" />
+            <Input name="name" type="text" placeholder="Seu nome" className="bg-background" />
+            <Input
+              name="email"
+              type="email"
+              placeholder="Seu email"
+              required
+              className="bg-background"
+            />
             <Button type="submit" size="lg" className="whitespace-nowrap">
               Receber Dicas
             </Button>

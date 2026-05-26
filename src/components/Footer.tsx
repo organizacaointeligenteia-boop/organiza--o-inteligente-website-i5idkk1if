@@ -2,17 +2,32 @@ import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
+import pb from '@/lib/pocketbase/client'
 import { navLinks } from './Header'
 
 export function Footer() {
   const { toast } = useToast()
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
-    toast({
-      title: 'Inscrição realizada!',
-      description: 'Você receberá nossas novidades em breve.',
-    })
+    const formData = new FormData(e.target as HTMLFormElement)
+    try {
+      const res = await pb.send('/backend/v1/newsletter/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email: formData.get('email') }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (res.success) {
+        toast({ title: 'Inscrição realizada!', description: res.message })
+        ;(e.target as HTMLFormElement).reset()
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Erro',
+        description: err.response?.message || 'Ocorreu um erro',
+        variant: 'destructive',
+      })
+    }
   }
 
   return (
@@ -44,7 +59,13 @@ export function Footer() {
               Receba dicas exclusivas toda semana.
             </p>
             <form onSubmit={handleSubscribe} className="flex gap-2">
-              <Input type="email" placeholder="Seu email" required className="bg-background" />
+              <Input
+                name="email"
+                type="email"
+                placeholder="Seu email"
+                required
+                className="bg-background"
+              />
               <Button type="submit">Assinar</Button>
             </form>
           </div>

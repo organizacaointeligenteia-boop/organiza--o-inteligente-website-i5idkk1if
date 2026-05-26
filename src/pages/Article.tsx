@@ -1,25 +1,39 @@
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePageTitle } from '@/hooks/use-page-title'
-import useArticlesStore from '@/stores/use-articles-store'
+import { getArticleBySlug, getArticles, type Article } from '@/services/articles'
 import { useToast } from '@/hooks/use-toast'
 import { ArrowLeft, Share2, Facebook, Twitter, Linkedin, Link as LinkIcon } from 'lucide-react'
 import NotFound from './NotFound'
 
-export default function Article() {
+export default function ArticlePage() {
   const { slug } = useParams<{ slug: string }>()
-  const { articles } = useArticlesStore()
+  const [article, setArticle] = useState<Article | null | undefined>(undefined)
+  const [related, setRelated] = useState<Article[]>([])
   const { toast } = useToast()
 
-  const article = articles.find((a) => a.slug === slug)
   usePageTitle(article?.title || 'Artigo não encontrado')
 
-  if (!article) {
-    return <NotFound />
-  }
+  useEffect(() => {
+    if (slug) {
+      getArticleBySlug(slug)
+        .then(setArticle)
+        .catch(() => setArticle(null))
+    }
+  }, [slug])
 
-  const related = articles.filter((a) => a.id !== article.id).slice(0, 3)
+  useEffect(() => {
+    if (article) {
+      getArticles()
+        .then((data) => setRelated(data.filter((a) => a.id !== article.id).slice(0, 3)))
+        .catch(console.error)
+    }
+  }, [article])
+
+  if (article === undefined) return <div className="py-20 text-center">Carregando...</div>
+  if (article === null) return <NotFound />
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href)
@@ -42,27 +56,27 @@ export default function Article() {
           <span>{article.category}</span>
           <span className="text-muted-foreground">•</span>
           <span className="text-muted-foreground">
-            {new Date(article.date).toLocaleDateString('pt-BR')}
+            {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
           </span>
-          <span className="text-muted-foreground">•</span>
-          <span className="text-muted-foreground">5 min de leitura</span>
         </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-tight">
           {article.title}
         </h1>
       </header>
 
-      <div className="aspect-[21/9] overflow-hidden rounded-xl bg-muted">
-        <img src={article.image} alt={article.title} className="w-full h-full object-cover" />
-      </div>
+      {article.featuredImage && (
+        <div className="aspect-[21/9] overflow-hidden rounded-xl bg-muted">
+          <img
+            src={article.featuredImage}
+            alt={article.title}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
 
       <div className="prose prose-lg dark:prose-invert max-w-none">
-        <p className="lead text-xl text-muted-foreground">{article.excerpt}</p>
-        <div
-          dangerouslySetInnerHTML={{
-            __html: `<p>${article.content.replace(/\n/g, '</p><p>')}</p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed aliquet ullamcorper libero, nec ultrices odio tempor a. Phasellus venenatis nisi at leo dignissim, ut pulvinar massa tristique.</p><h2>Mais Dicas Práticas</h2><p>Curabitur euismod ullamcorper elit, vel commodo mi placerat et. Nunc a vestibulum lacus. In hac habitasse platea dictumst. Morbi condimentum nisi nec orci fringilla fermentum.</p>`,
-          }}
-        />
+        {article.excerpt && <p className="lead text-xl text-muted-foreground">{article.excerpt}</p>}
+        <div dangerouslySetInnerHTML={{ __html: article.content }} />
       </div>
 
       <div className="border-y py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -85,25 +99,33 @@ export default function Article() {
         </div>
       </div>
 
-      <section className="pt-8 space-y-6">
-        <h3 className="text-2xl font-bold">Artigos Relacionados</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          {related.map((rel) => (
-            <Card key={rel.id} className="flex flex-col hover:shadow-md transition-shadow">
-              <div className="h-32 overflow-hidden bg-muted rounded-t-lg">
-                <img src={rel.image} alt={rel.title} className="w-full h-full object-cover" />
-              </div>
-              <CardHeader className="p-4 flex-1">
-                <CardTitle className="text-base line-clamp-2">
-                  <Link to={`/blog/${rel.slug}`} className="hover:text-primary">
-                    {rel.title}
-                  </Link>
-                </CardTitle>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
-      </section>
+      {related.length > 0 && (
+        <section className="pt-8 space-y-6">
+          <h3 className="text-2xl font-bold">Artigos Relacionados</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            {related.map((rel) => (
+              <Card key={rel.id} className="flex flex-col hover:shadow-md transition-shadow">
+                <div className="h-32 overflow-hidden bg-muted rounded-t-lg">
+                  {rel.featuredImage && (
+                    <img
+                      src={rel.featuredImage}
+                      alt={rel.title}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </div>
+                <CardHeader className="p-4 flex-1">
+                  <CardTitle className="text-base line-clamp-2">
+                    <Link to={`/blog/${rel.slug}`} className="hover:text-primary">
+                      {rel.title}
+                    </Link>
+                  </CardTitle>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
     </article>
   )
 }
