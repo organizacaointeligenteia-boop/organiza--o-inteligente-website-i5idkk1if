@@ -19,6 +19,7 @@ const About = lazy(() => import('./pages/About'))
 const Contact = lazy(() => import('./pages/Contact'))
 const Admin = lazy(() => import('./pages/Admin'))
 const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
 
 const LoadingFallback = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -50,6 +51,7 @@ const App = () => (
                 <Route path="/sobre" element={<About />} />
                 <Route path="/contato" element={<Contact />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
                 <Route element={<ProtectedRoute />}>
                   <Route path="/admin" element={<Admin />} />
                 </Route>

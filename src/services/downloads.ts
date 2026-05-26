@@ -10,5 +10,10 @@ export interface Download {
   updated: string
 }
 
-export const getDownloads = () =>
-  pb.collection('free_downloads').getFullList<Download>({ sort: '-created' })
+export const getDownloads = async () => {
+  const res = await pb.send('/backend/v1/downloads', { method: 'GET' })
+  return res.items as Download[]
+}
+export const trackDownload = async (id: string) => {
+  return pb.send(`/backend/v1/downloads/${id}/track`, { method: 'POST' })
+}

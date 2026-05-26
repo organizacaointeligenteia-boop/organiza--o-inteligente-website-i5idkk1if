@@ -14,14 +14,27 @@ export interface Article {
   updated: string
 }
 
-export const getArticles = () =>
-  pb.collection('articles').getFullList<Article>({ sort: '-publishedAt' })
-export const getArticleBySlug = async (slug: string) => {
-  const records = await pb
-    .collection('articles')
-    .getList<Article>(1, 1, { filter: `slug="${slug}"` })
-  return records.items[0]
+export const getArticles = async (limit = 12, offset = 0) => {
+  const res = await pb.send(`/backend/v1/articles?limit=${limit}&offset=${offset}`, {
+    method: 'GET',
+  })
+  return res.items as Article[]
 }
-export const createArticle = (data: Partial<Article>) =>
-  pb.collection('articles').create<Article>(data)
-export const deleteArticle = (id: string) => pb.collection('articles').delete(id)
+export const getArticlesList = async (page = 1, perPage = 12, filter = '') => {
+  return pb.collection('articles').getList<Article>(page, perPage, { filter, sort: '-publishedAt' })
+}
+export const getArticleBySlug = async (slug: string) => {
+  return pb.send(`/backend/v1/articles/${slug}`, { method: 'GET' }) as Promise<Article>
+}
+export const createArticle = async (data: any) => {
+  return pb.send('/backend/v1/articles/create', { method: 'POST', body: data }) as Promise<Article>
+}
+export const updateArticle = async (id: string, data: any) => {
+  return pb.send(`/backend/v1/articles/${id}/update`, {
+    method: 'PUT',
+    body: data,
+  }) as Promise<Article>
+}
+export const deleteArticle = async (id: string) => {
+  return pb.send(`/backend/v1/articles/${id}/delete`, { method: 'DELETE' })
+}

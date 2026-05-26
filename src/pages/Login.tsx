@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -69,6 +69,12 @@ export default function Login() {
               {loading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
+          <div className="mt-4 text-center text-sm">
+            Não tem uma conta?{' '}
+            <Link to="/signup" className="text-primary hover:underline">
+              Criar conta
+            </Link>
+          </div>
         </CardContent>
       </Card>
     </div>

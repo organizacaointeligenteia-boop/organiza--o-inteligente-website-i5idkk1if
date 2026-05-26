@@ -6,21 +6,19 @@ import { Input } from '@/components/ui/input'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { useToast } from '@/hooks/use-toast'
 import { getArticles, type Article } from '@/services/articles'
-import { getDownloads, type Download } from '@/services/downloads'
+import { getDownloads, type Download, trackDownload } from '@/services/downloads'
 import pb from '@/lib/pocketbase/client'
 import { ArrowRight, Download as DownloadIcon } from 'lucide-react'
 
 export default function Index() {
-  usePageTitle('Home')
+  usePageTitle('Organização Inteligente | Micro-guias de Produtividade')
   const { toast } = useToast()
 
   const [articles, setArticles] = useState<Article[]>([])
   const [tools, setTools] = useState<Download[]>([])
 
   useEffect(() => {
-    getArticles()
-      .then((data) => setArticles(data.slice(0, 4)))
-      .catch(console.error)
+    getArticles(4, 0).then(setArticles).catch(console.error)
     getDownloads()
       .then((data) => setTools(data.slice(0, 4)))
       .catch(console.error)
@@ -36,7 +34,7 @@ export default function Index() {
         headers: { 'Content-Type': 'application/json' },
       })
       if (res.success) {
-        toast({ title: 'Tudo pronto!', description: res.message })
+        toast({ title: 'Tudo pronto!', description: 'Inscrição realizada com sucesso' })
         ;(e.target as HTMLFormElement).reset()
       }
     } catch (err: any) {
@@ -48,9 +46,26 @@ export default function Index() {
     }
   }
 
+  const handleDownload = async (tool: Download) => {
+    try {
+      await trackDownload(tool.id)
+      toast({ title: 'Download iniciado', description: 'O arquivo está sendo baixado.' })
+      const url = pb.files.getURL(
+        { collectionId: 'free_downloads', id: tool.id } as any,
+        tool.fileUrl,
+      )
+      window.open(url, '_blank')
+    } catch (err) {
+      toast({ title: 'Erro ao baixar', variant: 'destructive' })
+    }
+  }
+
+  const scrollToNewsletter = () => {
+    document.getElementById('newsletter')?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
     <div className="flex flex-col gap-16 pb-8">
-      {/* Hero Section */}
       <section className="text-center space-y-6 py-12 md:py-24 animate-fade-in-up">
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-primary">
           Organize Sua Vida de Forma Inteligente
@@ -61,15 +76,19 @@ export default function Index() {
         </p>
         <div className="pt-4 flex justify-center gap-4">
           <Button asChild size="lg" className="h-12 px-8 text-base">
-            <Link to="/organizacao-pessoal">Comece Agora</Link>
+            <Link to="/blog">Comece Agora</Link>
           </Button>
-          <Button asChild variant="outline" size="lg" className="h-12 px-8 text-base">
-            <Link to="/blog">Ler Artigos</Link>
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-12 px-8 text-base"
+            onClick={scrollToNewsletter}
+          >
+            Baixar Ebook Gratuito
           </Button>
         </div>
       </section>
 
-      {/* Featured Articles */}
       <section className="space-y-8">
         <div className="flex justify-between items-end">
           <h2 className="text-2xl md:text-3xl font-bold">Artigos em Destaque</h2>
@@ -115,7 +134,6 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Free Tools */}
       <section className="space-y-8 bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-16 rounded-3xl">
         <h2 className="text-2xl md:text-3xl font-bold">Ferramentas Gratuitas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -132,7 +150,7 @@ export default function Index() {
                 <Button
                   variant="secondary"
                   className="w-full gap-2"
-                  onClick={() => toast({ title: 'Download indisponível no mock' })}
+                  onClick={() => handleDownload(tool)}
                 >
                   <DownloadIcon className="h-4 w-4" /> Baixar
                 </Button>
@@ -147,8 +165,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Inline Newsletter */}
-      <section className="py-12 flex justify-center">
+      <section id="newsletter" className="py-12 flex justify-center">
         <div className="bg-primary/5 rounded-3xl p-8 md:p-12 max-w-[800px] text-center space-y-6 w-full border border-primary/10">
           <h2 className="text-2xl md:text-3xl font-bold">Não perca nenhuma dica</h2>
           <p className="text-muted-foreground">
@@ -158,7 +175,12 @@ export default function Index() {
             onSubmit={handleSubscribe}
             className="flex flex-col sm:flex-row gap-3 max-w-[500px] mx-auto"
           >
-            <Input name="name" type="text" placeholder="Seu nome" className="bg-background" />
+            <Input
+              name="name"
+              type="text"
+              placeholder="Seu nome (opcional)"
+              className="bg-background"
+            />
             <Input
               name="email"
               type="email"
