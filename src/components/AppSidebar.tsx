@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom'
 import {
   Sidebar,
   SidebarContent,
@@ -8,22 +8,33 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from '@/components/ui/sidebar';
-import { navLinks } from './Header';
-import { BookOpen, Calendar, CheckSquare, Coffee, Compass, Download, Home, Info, Mail, Settings } from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from '@/components/ui/sidebar'
+import { navLinks } from './Header'
+import {
+  BookOpen,
+  Calendar,
+  CheckSquare,
+  Coffee,
+  Compass,
+  Download,
+  Home,
+  Info,
+  Mail,
+  Settings,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const iconMap: Record<string, React.ElementType> = {
-  'Home': Home,
+  Home: Home,
   'Organização Pessoal': CheckSquare,
-  'Produtividade': Compass,
-  'Hábitos': Coffee,
-  'Planejamento': Calendar,
+  Produtividade: Compass,
+  Hábitos: Coffee,
+  Planejamento: Calendar,
   'Ferramentas Gratuitas': Download,
-  'Blog': BookOpen,
-  'Sobre': Info,
-  'Contato': Mail,
-};
+  Blog: BookOpen,
+  Sobre: Info,
+  Contato: Mail,
+}
 
 export function AppSidebar() {
   return (
@@ -34,36 +45,46 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navLinks.map((item) => {
-                const Icon = iconMap[item.label] || BookOpen;
+                const Icon = iconMap[item.label] || BookOpen
                 return (
                   <SidebarMenuItem key={item.label}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.to}
-                        className={({ isActive }) => cn(
-                          "flex items-center gap-2",
-                          isActive && "text-primary font-medium bg-sidebar-accent"
-                        )}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center gap-2',
+                            isActive && 'text-primary font-medium bg-sidebar-accent',
+                          )
+                        }
                       >
                         <Icon className="h-4 w-4" />
                         <span>{item.label}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                );
+                )
               })}
               <SidebarMenuItem>
-                 <SidebarMenuButton asChild>
-                    <NavLink to="/admin" className={({ isActive }) => cn("flex items-center gap-2", isActive && "text-primary font-medium bg-sidebar-accent")}>
-                      <Settings className="h-4 w-4" />
-                      <span>Administração</span>
-                    </NavLink>
-                 </SidebarMenuButton>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/admin"
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-2',
+                        isActive && 'text-primary font-medium bg-sidebar-accent',
+                      )
+                    }
+                  >
+                    <Settings className="h-4 w-4" />
+                    <span>Administração</span>
+                  </NavLink>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
         <SidebarGroup>
           <SidebarGroupLabel>Atalhos do Blog</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -81,6 +102,6 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-    </SidebarSidebar>
-  );
+    </Sidebar>
+  )
 }
