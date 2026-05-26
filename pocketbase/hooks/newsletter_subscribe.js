@@ -3,8 +3,7 @@ routerAdd('POST', '/backend/v1/newsletter/subscribe', (e) => {
   const email = body.email
 
   if (!email || typeof email !== 'string' || !email.includes('@')) {
-    const { ValidationError } = require('pocketbase')
-    return e.badRequestError('Email inválido', {
+    throw new BadRequestError('Email inválido', {
       email: new ValidationError('validation_invalid_email', 'Email inválido'),
     })
   }
@@ -18,9 +17,8 @@ routerAdd('POST', '/backend/v1/newsletter/subscribe', (e) => {
     $app.save(record)
     return e.json(200, { success: true, message: 'Inscrição realizada com sucesso' })
   } catch (err) {
-    return e.json(400, {
-      success: false,
-      message: 'Este email já está inscrito ou ocorreu um erro.',
+    throw new BadRequestError('Este email já está inscrito ou ocorreu um erro.', {
+      email: new ValidationError('validation_not_unique', 'Este email já está inscrito.'),
     })
   }
 })
