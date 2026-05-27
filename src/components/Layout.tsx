@@ -10,9 +10,18 @@ export default function Layout() {
     <ErrorBoundary>
       <SidebarProvider>
         <AppSidebar />
-        <SidebarInset className="min-h-screen flex flex-col bg-background">
+        <SidebarInset className="min-h-screen flex flex-col bg-background relative">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-[100] bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium shadow-medium"
+          >
+            Pular para o conteúdo principal
+          </a>
           <Header />
-          <main className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-8 md:px-8 md:py-10 animate-fade-in">
+          <main
+            id="main-content"
+            className="flex-1 w-full max-w-[1200px] mx-auto px-4 py-8 md:px-8 md:py-12"
+          >
             <Outlet />
           </main>
           <Footer />

@@ -37,6 +37,7 @@ export default {
         foreground: 'hsl(var(--foreground))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
+          light: 'hsl(var(--primary-light))',
           foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
@@ -89,6 +90,8 @@ export default {
       boxShadow: {
         subtle: '0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03)',
         elevation: '0 4px 20px rgba(0, 0, 0, 0.05)',
+        small: '0 2px 8px rgba(0, 0, 0, 0.04)',
+        medium: '0 8px 24px rgba(0, 0, 0, 0.08)',
       },
     },
   },

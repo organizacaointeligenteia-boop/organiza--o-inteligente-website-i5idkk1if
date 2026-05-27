@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
 import { navLinks } from './Header'
+import { Instagram, Linkedin, Twitter } from 'lucide-react'
 
 export function Footer() {
   const { toast } = useToast()
@@ -18,7 +19,11 @@ export function Footer() {
         headers: { 'Content-Type': 'application/json' },
       })
       if (res.success) {
-        toast({ title: 'Inscrição realizada!', description: res.message })
+        toast({
+          title: 'Inscrição realizada!',
+          description: res.message,
+          className: 'bg-green-600 text-white border-none',
+        })
         ;(e.target as HTMLFormElement).reset()
       }
     } catch (err: any) {
@@ -31,22 +36,27 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t bg-card text-card-foreground mt-auto">
-      <div className="w-full max-w-[1200px] mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <h3 className="font-bold text-lg mb-4 text-primary">Organização Inteligente</h3>
-            <p className="text-sm text-muted-foreground">
+    <footer className="bg-secondary text-secondary-foreground mt-auto border-t">
+      <div className="w-full max-w-[1200px] mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 md:gap-8">
+          <div className="md:col-span-1">
+            <h3 className="font-bold text-[22px] mb-4 text-primary tracking-tight">
+              Organização Inteligente
+            </h3>
+            <p className="text-[15px] text-muted-foreground leading-relaxed">
               Micro-guias práticos para pessoas sem tempo. Transforme sua rotina com pequenos
-              hábitos diários.
+              hábitos diários em um ambiente premium.
             </p>
           </div>
           <div>
-            <h3 className="font-bold mb-4">Links Rápidos</h3>
-            <ul className="flex flex-col gap-2 text-sm text-muted-foreground">
-              {navLinks.map((link) => (
+            <h4 className="font-semibold mb-6 text-foreground tracking-wide">Links Rápidos</h4>
+            <ul className="flex flex-col gap-3 text-[15px] text-muted-foreground">
+              {navLinks.slice(1, 5).map((link) => (
                 <li key={link.to}>
-                  <Link to={link.to} className="hover:text-primary transition-colors">
+                  <Link
+                    to={link.to}
+                    className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
+                  >
                     {link.label}
                   </Link>
                 </li>
@@ -54,23 +64,77 @@ export function Footer() {
             </ul>
           </div>
           <div>
-            <h3 className="font-bold mb-4">Newsletter</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Receba dicas exclusivas toda semana.
+            <h4 className="font-semibold mb-6 text-foreground tracking-wide">Comunidade & Legal</h4>
+            <ul className="flex flex-col gap-3 text-[15px] text-muted-foreground">
+              <li>
+                <Link
+                  to="/sobre"
+                  className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
+                >
+                  Sobre Nós
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/contato"
+                  className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
+                >
+                  Contato
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
+                >
+                  Termos de Uso
+                </a>
+              </li>
+            </ul>
+            <div className="flex gap-4 mt-6">
+              <a
+                href="#"
+                aria-label="Instagram"
+                className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
+              >
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a
+                href="#"
+                aria-label="Twitter"
+                className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
+              >
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a
+                href="#"
+                aria-label="LinkedIn"
+                className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
+              >
+                <Linkedin className="h-5 w-5" />
+              </a>
+            </div>
+          </div>
+          <div className="md:col-span-1">
+            <h4 className="font-semibold mb-6 text-foreground tracking-wide">Newsletter Premium</h4>
+            <p className="text-[15px] text-muted-foreground mb-4 leading-relaxed">
+              Receba dicas exclusivas de alta qualidade semanalmente.
             </p>
-            <form onSubmit={handleSubscribe} className="flex gap-2">
+            <form onSubmit={handleSubscribe} className="flex flex-col gap-3">
               <Input
                 name="email"
                 type="email"
-                placeholder="Seu email"
+                placeholder="Seu melhor email"
                 required
-                className="bg-background"
+                className="bg-background border-border focus-visible:ring-primary shadow-sm"
               />
-              <Button type="submit">Assinar</Button>
+              <Button type="submit" className="w-full shadow-sm">
+                Assinar Gratuitamente
+              </Button>
             </form>
           </div>
         </div>
-        <div className="border-t mt-12 pt-8 text-center text-sm text-muted-foreground">
+        <div className="border-t border-border mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">
           <p>© 2026 Organização Inteligente. Todos os direitos reservados.</p>
         </div>
       </div>
