@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -9,7 +9,8 @@ import { useToast } from '@/hooks/use-toast'
 import { getArticles, type Article } from '@/services/articles'
 import { getDownloads, type Download, trackDownload } from '@/services/downloads'
 import pb from '@/lib/pocketbase/client'
-import { findFreeDownloadFile, downloadPdfFromBase64 } from '@/lib/freeDownloadFiles'
+import { findFreeDownloadFile, createPdfBlobUrl } from '@/lib/freeDownloadFiles'
+import { cn } from '@/lib/utils'
 import { ToastAction } from '@/components/ui/toast'
 import {
   ArrowRight,
@@ -44,6 +45,23 @@ export default function Index() {
       .catch(console.error)
   }, [])
 
+  const downloadUrls = useMemo(() => {
+    const urls: Record<string, { url: string; filename: string }> = {}
+    for (const tool of tools) {
+      const file = findFreeDownloadFile(tool.title)
+      if (file) {
+        urls[tool.id] = { url: createPdfBlobUrl(file.base64), filename: file.filename }
+      }
+    }
+    return urls
+  }, [tools])
+
+  useEffect(() => {
+    return () => {
+      Object.values(downloadUrls).forEach(({ url }) => URL.revokeObjectURL(url))
+    }
+  }, [downloadUrls])
+
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault()
     const formData = new FormData(e.target as HTMLFormElement)
@@ -70,12 +88,7 @@ export default function Index() {
     }
   }
 
-  const handleDownload = async (tool: Download) => {
-    const file = findFreeDownloadFile(tool.title)
-    if (!file) {
-      scrollToNewsletter()
-      return
-    }
+  const handleDownload = (tool: Download) => {
     toast({
       title: 'Download iniciado',
       description: 'Cadastre seu e-mail para receber novas ferramentas.',
@@ -85,12 +98,7 @@ export default function Index() {
         </ToastAction>
       ),
     })
-    try {
-      await trackDownload(tool.id)
-      downloadPdfFromBase64(file.base64, file.filename)
-    } catch {
-      toast({ title: 'Erro ao baixar', variant: 'destructive' })
-    }
+    trackDownload(tool.id).catch(() => {})
   }
 
   const scrollToNewsletter = () => {
@@ -295,13 +303,24 @@ export default function Index() {
                   <CardDescription className="mt-3 text-[15px]">{tool.description}</CardDescription>
                 </CardHeader>
                 <CardFooter className="p-6 pt-0">
-                  <Button
-                    variant="default"
-                    className="w-full gap-2 font-semibold"
-                    onClick={() => handleDownload(tool)}
-                  >
-                    <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
-                  </Button>
+                  {downloadUrls[tool.id] ? (
+                    <a
+                      href={downloadUrls[tool.id].url}
+                      download={downloadUrls[tool.id].filename}
+                      onClick={() => handleDownload(tool)}
+                      className={cn(buttonVariants(), 'w-full gap-2 font-semibold cursor-pointer')}
+                    >
+                      <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
+                    </a>
+                  ) : (
+                    <Button
+                      variant="default"
+                      className="w-full gap-2 font-semibold"
+                      onClick={scrollToNewsletter}
+                    >
+                      <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))}
