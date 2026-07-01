@@ -23,6 +23,7 @@ const Signup = lazy(() => import('./pages/Signup'))
 const Recommended = lazy(() => import('./pages/Recommended'))
 const Terms = lazy(() => import('./pages/Terms'))
 const Privacy = lazy(() => import('./pages/Privacy'))
+const KitPage = lazy(() => import('./pages/KitPage'))
 
 const LoadingFallback = () => (
   <div className="flex min-h-[60vh] items-center justify-center">
@@ -58,6 +59,7 @@ const App = () => (
                 <Route path="/recomendados" element={<Recommended />} />
                 <Route path="/termos" element={<Terms />} />
                 <Route path="/privacidade" element={<Privacy />} />
+                <Route path="/kit-organizacao-inteligente" element={<KitPage />} />
                 <Route element={<ProtectedRoute />}>
                   <Route path="/admin" element={<Admin />} />
                 </Route>
