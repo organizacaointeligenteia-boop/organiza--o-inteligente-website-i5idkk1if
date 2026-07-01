@@ -1,17 +1,19 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { getDownloads, trackDownload, type Download } from '@/services/downloads'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
-import { Download as DownloadIcon } from 'lucide-react'
+import { Download as DownloadIcon, Mail } from 'lucide-react'
 
 export default function FreeTools() {
   usePageTitle('Ferramentas Gratuitas | Organização Inteligente')
   const { toast } = useToast()
   const [tools, setTools] = useState<Download[]>([])
+  const newsletterRef = useRef<HTMLInputElement>(null)
 
   const loadTools = () => {
     getDownloads().then(setTools).catch(console.error)
@@ -26,6 +28,10 @@ export default function FreeTools() {
   })
 
   const handleDownload = async (tool: Download) => {
+    if (!tool.fileUrl) {
+      scrollToNewsletter()
+      return
+    }
     try {
       await trackDownload(tool.id)
       toast({ title: 'Download iniciado', description: 'O arquivo está sendo baixado.' })
@@ -34,8 +40,39 @@ export default function FreeTools() {
         tool.fileUrl,
       )
       window.open(url, '_blank')
-    } catch (err) {
+    } catch {
       toast({ title: 'Erro ao baixar', variant: 'destructive' })
+    }
+  }
+
+  const scrollToNewsletter = () => {
+    document.getElementById('newsletter')?.scrollIntoView({ behavior: 'smooth' })
+    setTimeout(() => newsletterRef.current?.focus(), 600)
+  }
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const formData = new FormData(e.target as HTMLFormElement)
+    try {
+      const res = await pb.send('/backend/v1/newsletter/subscribe', {
+        method: 'POST',
+        body: JSON.stringify({ email: formData.get('email') }),
+        headers: { 'Content-Type': 'application/json' },
+      })
+      if (res.success) {
+        toast({
+          title: 'Inscrição realizada!',
+          description: res.message,
+          className: 'bg-green-600 text-white border-none',
+        })
+        ;(e.target as HTMLFormElement).reset()
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Erro',
+        description: err.response?.message || 'Ocorreu um erro',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -60,16 +97,28 @@ export default function FreeTools() {
             <CardHeader className="flex-1">
               <CardTitle className="text-xl flex justify-between items-start">
                 {tool.title}
-                <span className="text-xs font-normal text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                  {tool.downloadCount} baixados
-                </span>
+                {tool.downloadCount > 0 && (
+                  <span className="text-xs font-normal text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                    {tool.downloadCount} baixados
+                  </span>
+                )}
               </CardTitle>
               <CardDescription className="mt-2 text-base">{tool.description}</CardDescription>
             </CardHeader>
             <CardFooter>
-              <Button className="w-full gap-2" onClick={() => handleDownload(tool)}>
-                <DownloadIcon className="h-4 w-4" /> Baixar
-              </Button>
+              {tool.fileUrl ? (
+                <Button className="w-full gap-2" onClick={() => handleDownload(tool)}>
+                  <DownloadIcon className="h-4 w-4" /> Baixar
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => handleDownload(tool)}
+                >
+                  <Mail className="h-4 w-4" /> Receber por e-mail
+                </Button>
+              )}
             </CardFooter>
           </Card>
         ))}
@@ -82,6 +131,39 @@ export default function FreeTools() {
           </Card>
         )}
       </div>
+
+      <section id="newsletter" className="py-10 flex justify-center">
+        <div className="bg-card rounded-[32px] p-8 md:p-16 max-w-[900px] text-center space-y-6 w-full shadow-elevation border border-border relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent"></div>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Receba nossas ferramentas por e-mail
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">
+            Algumas ferramentas estão sendo preparadas. Inscreva-se para ser avisado quando
+            estiverem disponíveis.
+          </p>
+          <form
+            onSubmit={handleSubscribe}
+            className="flex flex-col sm:flex-row gap-3 max-w-[550px] mx-auto pt-6"
+          >
+            <Input
+              name="email"
+              type="email"
+              placeholder="E-mail principal"
+              required
+              className="bg-background flex-1 shadow-sm"
+              ref={newsletterRef}
+            />
+            <Button
+              type="submit"
+              size="lg"
+              className="whitespace-nowrap w-full sm:w-auto shadow-sm"
+            >
+              Quero receber
+            </Button>
+          </form>
+        </div>
+      </section>
     </div>
   )
 }

@@ -56,7 +56,12 @@ export default function Contact() {
             <div className="space-y-4">
               <div className="flex items-center gap-3 text-muted-foreground">
                 <Mail className="h-5 w-5 text-primary flex-shrink-0" />
-                <span>{CONTACT_EMAIL}</span>
+                <a
+                  href={`mailto:${CONTACT_EMAIL}`}
+                  className="hover:text-primary transition-colors"
+                >
+                  {CONTACT_EMAIL}
+                </a>
               </div>
               <div className="flex items-center gap-3 text-muted-foreground">
                 <Phone className="h-5 w-5 text-primary flex-shrink-0" />

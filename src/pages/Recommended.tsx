@@ -83,13 +83,17 @@ export default function Recommended() {
                     Comissão de até {item.commission}%
                   </span>
                 )}
-                <Button
-                  className="ml-auto gap-2"
-                  size="sm"
-                  onClick={() => window.open(item.affiliateUrl, '_blank', 'noopener,noreferrer')}
-                >
-                  <ExternalLink className="h-4 w-4" /> Acessar
-                </Button>
+                {item.affiliateUrl ? (
+                  <Button className="ml-auto gap-2" size="sm" asChild>
+                    <a href={item.affiliateUrl} target="_blank" rel="noopener noreferrer sponsored">
+                      <ExternalLink className="h-4 w-4" /> Acessar
+                    </a>
+                  </Button>
+                ) : (
+                  <span className="ml-auto text-sm text-muted-foreground italic">
+                    Link em breve
+                  </span>
+                )}
               </CardFooter>
             </Card>
           ))}

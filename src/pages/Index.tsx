@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -31,6 +31,7 @@ export default function Index() {
   const [articles, setArticles] = useState<Article[]>([])
   const [tools, setTools] = useState<Download[]>([])
   const [loading, setLoading] = useState(true)
+  const newsletterEmailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     Promise.all([
@@ -83,6 +84,7 @@ export default function Index() {
 
   const scrollToNewsletter = () => {
     document.getElementById('newsletter')?.scrollIntoView({ behavior: 'smooth' })
+    setTimeout(() => newsletterEmailRef.current?.focus(), 600)
   }
 
   const valueCards = [
@@ -374,6 +376,7 @@ export default function Index() {
               placeholder="E-mail principal"
               required
               className="bg-background flex-1 shadow-sm"
+              ref={newsletterEmailRef}
             />
             <Button
               type="submit"

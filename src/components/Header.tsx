@@ -24,11 +24,7 @@ export function Header() {
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
-  const desktopLinks = [
-    ...navLinks.slice(1, 6),
-    { to: '/recomendados', label: 'Recomendados' },
-    ...navLinks.slice(6, 7),
-  ]
+  const desktopLinks = navLinks.slice(1)
 
   return (
     <header className="sticky top-0 z-40 w-full h-[72px] bg-background/90 backdrop-blur-md border-b shadow-small flex flex-none items-center justify-between px-4 md:px-6 transition-colors">

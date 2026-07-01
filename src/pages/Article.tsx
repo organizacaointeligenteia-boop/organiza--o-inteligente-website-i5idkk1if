@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { getArticleBySlug, getArticlesList, type Article } from '@/services/articles'
 import { useToast } from '@/hooks/use-toast'
+import { cn } from '@/lib/utils'
 import {
   ArrowLeft,
   Share2,
@@ -117,12 +118,12 @@ export default function ArticlePage() {
           <span className="text-muted-foreground font-normal">
             {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
           </span>
-          {article.readingTime && (
+          {article.readingTime ? (
             <>
               <span className="text-muted-foreground font-normal">•</span>
               <span className="text-muted-foreground font-normal">{article.readingTime} min</span>
             </>
-          )}
+          ) : null}
         </div>
         <h1 className="text-4xl md:text-[56px] font-bold tracking-tight leading-[1.1] text-foreground">
           {article.title}
@@ -139,7 +140,12 @@ export default function ArticlePage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-16 relative">
+      <div
+        className={cn(
+          'grid grid-cols-1 gap-16 relative',
+          toc.length > 0 && 'lg:grid-cols-[1fr_280px]',
+        )}
+      >
         <div className="prose prose-lg dark:prose-invert max-w-none prose-p:leading-[1.8] prose-headings:text-foreground prose-a:text-primary hover:prose-a:text-primary/80 transition-colors prose-img:rounded-2xl">
           {article.excerpt && (
             <p className="lead text-[22px] text-muted-foreground font-medium mb-10">
@@ -149,28 +155,27 @@ export default function ArticlePage() {
           <div dangerouslySetInnerHTML={{ __html: contentWithIds }} />
         </div>
 
-        <aside className="hidden lg:block relative">
-          <div className="sticky top-[100px] bg-secondary p-6 rounded-2xl border border-border shadow-sm">
-            <h4 className="font-bold flex items-center gap-2 mb-6 text-sm uppercase tracking-wider text-foreground">
-              <ListOrdered className="h-4 w-4" /> Índice
-            </h4>
-            <ul className="space-y-3 text-[15px]">
-              {toc.map((item, i) => (
-                <li key={i} className={item.level === '3' ? 'ml-4' : ''}>
-                  <a
-                    href={`#${item.id}`}
-                    className="text-muted-foreground hover:text-primary transition-colors font-medium block"
-                  >
-                    {item.text}
-                  </a>
-                </li>
-              ))}
-              {toc.length === 0 && (
-                <li className="text-muted-foreground">Nenhum índice disponível</li>
-              )}
-            </ul>
-          </div>
-        </aside>
+        {toc.length > 0 && (
+          <aside className="hidden lg:block relative">
+            <div className="sticky top-[100px] bg-secondary p-6 rounded-2xl border border-border shadow-sm">
+              <h4 className="font-bold flex items-center gap-2 mb-6 text-sm uppercase tracking-wider text-foreground">
+                <ListOrdered className="h-4 w-4" /> Índice
+              </h4>
+              <ul className="space-y-3 text-[15px]">
+                {toc.map((item, i) => (
+                  <li key={i} className={item.level === '3' ? 'ml-4' : ''}>
+                    <a
+                      href={`#${item.id}`}
+                      className="text-muted-foreground hover:text-primary transition-colors font-medium block"
+                    >
+                      {item.text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </aside>
+        )}
       </div>
 
       <div className="border-y border-border mt-16 py-8 flex flex-col sm:flex-row items-center justify-between gap-6 max-w-[800px]">
