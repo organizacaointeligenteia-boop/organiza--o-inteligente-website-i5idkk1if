@@ -12,6 +12,7 @@ export const navLinks = [
   { to: '/habitos', label: 'Hábitos' },
   { to: '/planejamento', label: 'Planejamento' },
   { to: '/ferramentas-gratuitas', label: 'Ferramentas Gratuitas' },
+  { to: '/recomendados', label: 'Recomendados' },
   { to: '/blog', label: 'Blog' },
   { to: '/sobre', label: 'Sobre' },
   { to: '/contato', label: 'Contato' },
@@ -22,6 +23,12 @@ export function Header() {
   const { isMobile } = useSidebar()
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
+
+  const desktopLinks = [
+    ...navLinks.slice(1, 6),
+    { to: '/recomendados', label: 'Recomendados' },
+    ...navLinks.slice(6, 7),
+  ]
 
   return (
     <header className="sticky top-0 z-40 w-full h-[72px] bg-background/90 backdrop-blur-md border-b shadow-small flex flex-none items-center justify-between px-4 md:px-6 transition-colors">
@@ -39,7 +46,7 @@ export function Header() {
       </div>
 
       <nav className="hidden lg:flex items-center gap-1 overflow-x-auto">
-        {navLinks.slice(1, 6).map((link) => (
+        {desktopLinks.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}

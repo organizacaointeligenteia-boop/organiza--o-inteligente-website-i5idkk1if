@@ -1,16 +1,6 @@
 migrate(
   (app) => {
-    const users = app.findCollectionByNameOrId('_pb_users_auth_')
-    try {
-      app.findAuthRecordByEmail('_pb_users_auth_', 'fabricio@ferriferriadv.com.br')
-    } catch (_) {
-      const record = new Record(users)
-      record.setEmail('fabricio@ferriferriadv.com.br')
-      record.setPassword('Skip@Pass')
-      record.setVerified(true)
-      record.set('name', 'Administrador')
-      app.save(record)
-    }
+    // Do not seed administrator credentials in source code. Create the production admin directly in PocketBase and keep credentials out of exports.
 
     const articlesCol = app.findCollectionByNameOrId('articles')
     try {

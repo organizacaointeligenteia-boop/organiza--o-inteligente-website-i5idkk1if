@@ -44,14 +44,14 @@ export function Footer() {
               Organização Inteligente
             </h3>
             <p className="text-[15px] text-muted-foreground leading-relaxed">
-              Micro-guias práticos para pessoas sem tempo. Transforme sua rotina com pequenos
-              hábitos diários em um ambiente premium.
+              Guias, checklists e ferramentas para profissionais ocupados organizarem rotina,
+              documentos, foco e planejamento semanal.
             </p>
           </div>
           <div>
             <h4 className="font-semibold mb-6 text-foreground tracking-wide">Links Rápidos</h4>
             <ul className="flex flex-col gap-3 text-[15px] text-muted-foreground">
-              {navLinks.slice(1, 5).map((link) => (
+              {navLinks.slice(1, 6).map((link) => (
                 <li key={link.to}>
                   <Link
                     to={link.to}
@@ -83,31 +83,45 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <a
-                  href="#"
+                <Link
+                  to="/termos"
                   className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
                 >
                   Termos de Uso
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/privacidade"
+                  className="hover:text-primary transition-colors min-h-[44px] inline-flex items-center"
+                >
+                  Política de Privacidade
+                </Link>
               </li>
             </ul>
             <div className="flex gap-4 mt-6">
               <a
-                href="#"
+                href="https://instagram.com/"
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Instagram"
                 className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
               >
                 <Instagram className="h-5 w-5" />
               </a>
               <a
-                href="#"
+                href="https://x.com/"
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Twitter"
                 className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
               >
                 <Twitter className="h-5 w-5" />
               </a>
               <a
-                href="#"
+                href="https://linkedin.com/"
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="LinkedIn"
                 className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
               >
@@ -116,20 +130,20 @@ export function Footer() {
             </div>
           </div>
           <div className="md:col-span-1">
-            <h4 className="font-semibold mb-6 text-foreground tracking-wide">Newsletter Premium</h4>
+            <h4 className="font-semibold mb-6 text-foreground tracking-wide">Checklist gratuito</h4>
             <p className="text-[15px] text-muted-foreground mb-4 leading-relaxed">
-              Receba dicas exclusivas de alta qualidade semanalmente.
+              Receba materiais práticos para organizar sua semana e reduzir pendências.
             </p>
             <form onSubmit={handleSubscribe} className="flex flex-col gap-3">
               <Input
                 name="email"
                 type="email"
-                placeholder="Seu melhor email"
+                placeholder="Seu melhor e-mail"
                 required
                 className="bg-background border-border focus-visible:ring-primary shadow-sm"
               />
               <Button type="submit" className="w-full shadow-sm">
-                Assinar Gratuitamente
+                Quero receber
               </Button>
             </form>
           </div>

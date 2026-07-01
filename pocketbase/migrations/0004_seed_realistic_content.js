@@ -1,17 +1,6 @@
 migrate(
   (app) => {
-    // ── Auth seed (maintain admin user) ──
-    try {
-      app.findAuthRecordByEmail('_pb_users_auth_', 'fabricio@ferriferriadv.com.br')
-    } catch (_) {
-      var users = app.findCollectionByNameOrId('_pb_users_auth_')
-      var adminRecord = new Record(users)
-      adminRecord.setEmail('fabricio@ferriferriadv.com.br')
-      adminRecord.setPassword('Skip@Pass')
-      adminRecord.setVerified(true)
-      adminRecord.set('name', 'Administrador')
-      app.save(adminRecord)
-    }
+    // Do not seed administrator credentials in source code. Create the production admin directly in PocketBase and keep credentials out of exports.
 
     var now = new Date()
     function dateAgo(months, days) {

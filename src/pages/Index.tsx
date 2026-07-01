@@ -9,10 +9,23 @@ import { useToast } from '@/hooks/use-toast'
 import { getArticles, type Article } from '@/services/articles'
 import { getDownloads, type Download, trackDownload } from '@/services/downloads'
 import pb from '@/lib/pocketbase/client'
-import { ArrowRight, Download as DownloadIcon, InboxIcon } from 'lucide-react'
+import {
+  ArrowRight,
+  Download as DownloadIcon,
+  InboxIcon,
+  Eye,
+  Target,
+  Zap,
+  CheckCircle2,
+  ClipboardList,
+  CalendarDays,
+  FileText,
+  Wallet,
+  RefreshCw,
+} from 'lucide-react'
 
 export default function Index() {
-  usePageTitle('Organização Inteligente | Micro-guias de Produtividade')
+  usePageTitle('Organização Inteligente | Rotina, foco e execução para profissionais ocupados')
   const { toast } = useToast()
 
   const [articles, setArticles] = useState<Article[]>([])
@@ -72,25 +85,56 @@ export default function Index() {
     document.getElementById('newsletter')?.scrollIntoView({ behavior: 'smooth' })
   }
 
+  const valueCards = [
+    {
+      icon: Eye,
+      title: 'Clareza',
+      description:
+        'Tire as tarefas da cabeça e coloque em um sistema confiável que você consegue revisar em minutos.',
+    },
+    {
+      icon: Target,
+      title: 'Prioridade',
+      description:
+        'Separe o que realmente importa do urgente e concentre sua energia nas poucas tarefas que movem a agulha.',
+    },
+    {
+      icon: Zap,
+      title: 'Execução',
+      description:
+        'Use blocos de foco e checklists para transformar intenções em ações concretas, dia após dia.',
+    },
+  ]
+
+  const kitItems = [
+    { icon: CalendarDays, label: 'Planner semanal' },
+    { icon: ClipboardList, label: 'Checklist de documentos' },
+    { icon: Wallet, label: 'Mapa financeiro' },
+    { icon: RefreshCw, label: 'Revisão de domingo' },
+  ]
+
   return (
     <div className="flex flex-col gap-20 pb-12">
       <section className="relative text-center py-24 md:py-32 px-6 md:px-12 animate-fade-in bg-gradient-to-br from-primary to-primary-light text-white rounded-[24px] overflow-hidden shadow-medium mx-auto w-full">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent pointer-events-none"></div>
         <div className="relative z-10 flex flex-col items-center justify-center max-w-[800px] mx-auto space-y-8">
-          <h1 className="text-[40px] md:text-[64px] font-bold tracking-tight text-white leading-[1.1] animate-fade-in-up stagger-1">
-            Organize Sua Vida de <br className="hidden md:block" /> Forma Inteligente
+          <span className="inline-block bg-white/15 backdrop-blur-md text-white border border-white/20 px-4 py-2 rounded-full text-sm font-medium animate-fade-in-up stagger-1">
+            Para profissionais ocupados que precisam sair do caos
+          </span>
+          <h1 className="text-[40px] md:text-[64px] font-bold tracking-tight text-white leading-[1.1] animate-fade-in-up stagger-2">
+            Organize sua rotina e execute o que importa
           </h1>
-          <p className="text-[18px] md:text-[22px] text-primary-foreground/90 max-w-[650px] leading-relaxed animate-fade-in-up stagger-2">
-            Micro-guias práticos para pessoas sem tempo. Transforme sua rotina diária e alcance seus
-            objetivos em um ambiente premium e focado.
+          <p className="text-[18px] md:text-[22px] text-primary-foreground/90 max-w-[650px] leading-relaxed animate-fade-in-up stagger-3">
+            Guias, checklists e ferramentas para transformar tarefas soltas em um sistema simples de
+            planejamento, foco e acompanhamento semanal.
           </p>
-          <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto animate-fade-in-up stagger-3">
+          <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4 w-full sm:w-auto animate-fade-in-up stagger-4">
             <Button
               asChild
               size="lg"
               className="bg-white text-primary hover:bg-white/90 font-semibold w-full sm:w-auto"
             >
-              <Link to="/blog">Comece Agora</Link>
+              <Link to="/blog">Ver guias práticos</Link>
             </Button>
             <Button
               variant="outline"
@@ -98,9 +142,28 @@ export default function Index() {
               className="bg-transparent text-white border-white/30 hover:bg-white/10 w-full sm:w-auto font-medium"
               onClick={scrollToNewsletter}
             >
-              Baixar Ebook Gratuito
+              Receber checklist gratuito
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section className="animate-fade-in-up">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {valueCards.map((card) => (
+            <Card
+              key={card.title}
+              className="bg-card border-border p-6 space-y-4 transition-all duration-300 hover:-translate-y-1 hover:shadow-medium"
+            >
+              <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                <card.icon className="h-6 w-6" />
+              </div>
+              <h3 className="text-xl font-bold tracking-tight">{card.title}</h3>
+              <p className="text-muted-foreground text-[15px] leading-relaxed">
+                {card.description}
+              </p>
+            </Card>
+          ))}
         </div>
       </section>
 
@@ -192,7 +255,7 @@ export default function Index() {
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <h2 className="text-3xl md:text-4xl font-bold">Ferramentas Gratuitas</h2>
           <p className="text-muted-foreground text-lg">
-            Baixe templates e planners para aplicar os métodos imediatamente.
+            Baixe checklists, planners e modelos para aplicar o método imediatamente.
           </p>
         </div>
 
@@ -243,13 +306,57 @@ export default function Index() {
         </div>
       </section>
 
+      <section className="bg-gradient-to-br from-primary to-primary-light text-white rounded-[32px] p-8 md:p-16 space-y-8 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white to-transparent pointer-events-none"></div>
+        <div className="relative z-10 max-w-3xl space-y-6">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Kit Organização Inteligente
+          </h2>
+          <p className="text-lg text-primary-foreground/90 leading-relaxed">
+            O primeiro produto pago pode reunir checklist da vida organizada, planner semanal,
+            controle de documentos, mapa financeiro básico e rotina de revisão de domingo.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            {kitItems.map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3"
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span className="font-medium">{item.label}</span>
+                <CheckCircle2 className="h-5 w-5 ml-auto flex-shrink-0 text-white/80" />
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <Button
+              size="lg"
+              className="bg-white text-primary hover:bg-white/90 font-semibold"
+              onClick={scrollToNewsletter}
+            >
+              Entrar na lista de espera
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="bg-transparent text-white border-white/30 hover:bg-white/10 font-medium"
+            >
+              <Link to="/recomendados">Ver ferramentas recomendadas</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       <section id="newsletter" className="py-10 flex justify-center">
         <div className="bg-card rounded-[32px] p-8 md:p-16 max-w-[900px] text-center space-y-6 w-full shadow-elevation border border-border relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent"></div>
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Evolua 1% todo dia</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Receba o Checklist da Vida Organizada
+          </h2>
           <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">
-            Mais de 10.000 profissionais já recebem nossa curadoria de alta performance. Junte-se à
-            comunidade premium.
+            Entre na lista para receber materiais práticos sobre rotina, foco, documentos, finanças
+            pessoais e planejamento semanal.
           </p>
           <form
             onSubmit={handleSubscribe}
@@ -273,7 +380,7 @@ export default function Index() {
               size="lg"
               className="whitespace-nowrap w-full sm:w-auto shadow-sm"
             >
-              Acesso Gratuito
+              Quero receber
             </Button>
           </form>
         </div>
