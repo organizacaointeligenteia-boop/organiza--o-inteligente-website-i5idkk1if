@@ -9,6 +9,8 @@ import { useToast } from '@/hooks/use-toast'
 import { getArticles, type Article } from '@/services/articles'
 import { getDownloads, type Download, trackDownload } from '@/services/downloads'
 import pb from '@/lib/pocketbase/client'
+import { findFreeDownloadFile, downloadPdfFromBase64 } from '@/lib/freeDownloadFiles'
+import { ToastAction } from '@/components/ui/toast'
 import {
   ArrowRight,
   Download as DownloadIcon,
@@ -22,7 +24,6 @@ import {
   FileText,
   Wallet,
   RefreshCw,
-  Mail,
 } from 'lucide-react'
 
 export default function Index() {
@@ -70,19 +71,24 @@ export default function Index() {
   }
 
   const handleDownload = async (tool: Download) => {
-    if (!tool.fileUrl) {
+    const file = findFreeDownloadFile(tool.title)
+    if (!file) {
       scrollToNewsletter()
       return
     }
     try {
       await trackDownload(tool.id)
-      toast({ title: 'Download iniciado', description: 'O arquivo está sendo baixado.' })
-      const url = pb.files.getURL(
-        { collectionId: 'free_downloads', id: tool.id } as any,
-        tool.fileUrl,
-      )
-      window.open(url, '_blank')
-    } catch (err) {
+      downloadPdfFromBase64(file.base64, file.filename)
+      toast({
+        title: 'Download concluído!',
+        description: 'Quer receber mais materiais gratuitos por e-mail?',
+        action: (
+          <ToastAction altText="Inscrever na newsletter" onClick={scrollToNewsletter}>
+            Quero receber
+          </ToastAction>
+        ),
+      })
+    } catch {
       toast({ title: 'Erro ao baixar', variant: 'destructive' })
     }
   }
@@ -289,23 +295,13 @@ export default function Index() {
                   <CardDescription className="mt-3 text-[15px]">{tool.description}</CardDescription>
                 </CardHeader>
                 <CardFooter className="p-6 pt-0">
-                  {tool.fileUrl ? (
-                    <Button
-                      variant="default"
-                      className="w-full gap-2 font-semibold"
-                      onClick={() => handleDownload(tool)}
-                    >
-                      <DownloadIcon className="h-[18px] w-[18px]" /> Baixar Arquivo
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2 font-semibold"
-                      onClick={() => handleDownload(tool)}
-                    >
-                      <Mail className="h-[18px] w-[18px]" /> Receber por e-mail
-                    </Button>
-                  )}
+                  <Button
+                    variant="default"
+                    className="w-full gap-2 font-semibold"
+                    onClick={() => handleDownload(tool)}
+                  >
+                    <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
+                  </Button>
                 </CardFooter>
               </Card>
             ))}
