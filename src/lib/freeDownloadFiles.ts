@@ -1,5 +1,6 @@
 export interface FreeDownloadFile {
   title: string
+  aliases?: string[]
   description: string
   filename: string
   base64: string
@@ -51,11 +52,41 @@ export const freeDownloadFiles: FreeDownloadFile[] = [
   },
   {
     title: 'Planner Semanal',
+    aliases: ['Template de Planejamento Semanal'],
     description: 'Planeje sua semana em 15 minutos com blocos de foco e prioridades claras.',
-    filename: 'planner-semanal.pdf',
+    filename: 'planner-semanal-inteligente.pdf',
     base64: buildPdfBase64(
-      'Planner Semanal',
+      'Planner Semanal Inteligente',
       'Planeje sua semana em 15 minutos com blocos de foco e prioridades claras.',
+    ),
+  },
+  {
+    title: 'Planilha de Hábitos',
+    aliases: ['Planilha de Controle de Hábitos Mensal'],
+    description: 'Acompanhe seus hábitos diários de forma visual e simples.',
+    filename: 'controle-de-habitos-mensal.pdf',
+    base64: buildPdfBase64(
+      'Controle de Habitos Mensal',
+      'Acompanhe seus habitos diarios de forma visual e simples.',
+    ),
+  },
+  {
+    title: 'Ebook: O Guia da Mente Organizada',
+    aliases: ['O Guia da Mente Organizada', 'Ebook O Guia da Mente Organizada'],
+    description: 'Guia completo para organizar sua mente, seu tempo e suas prioridades.',
+    filename: 'guia-da-mente-organizada.pdf',
+    base64: buildPdfBase64(
+      'O Guia da Mente Organizada',
+      'Guia completo para organizar sua mente, seu tempo e suas prioridades.',
+    ),
+  },
+  {
+    title: 'Checklist da Rotina Matinal Ideal',
+    description: 'Roteiro prático para uma rotina matinal que potencializa seu dia.',
+    filename: 'checklist-rotina-matinal-ideal.pdf',
+    base64: buildPdfBase64(
+      'Checklist da Rotina Matinal Ideal',
+      'Roteiro pratico para uma rotina matinal que potencializa seu dia.',
     ),
   },
   {
@@ -110,10 +141,16 @@ function normalizeTitle(title: string): string {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
     .trim()
 }
 
 export function findFreeDownloadFile(title: string): FreeDownloadFile | undefined {
   const normalized = normalizeTitle(title)
-  return freeDownloadFiles.find((f) => normalizeTitle(f.title) === normalized)
+  return freeDownloadFiles.find(
+    (f) =>
+      normalizeTitle(f.title) === normalized ||
+      (f.aliases && f.aliases.some((a) => normalizeTitle(a) === normalized)),
+  )
 }

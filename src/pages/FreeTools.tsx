@@ -35,18 +35,18 @@ export default function FreeTools() {
       scrollToNewsletter()
       return
     }
+    toast({
+      title: 'Download iniciado',
+      description: 'Cadastre seu e-mail para receber novas ferramentas.',
+      action: (
+        <ToastAction altText="Inscrever na newsletter" onClick={scrollToNewsletter}>
+          Quero receber
+        </ToastAction>
+      ),
+    })
     try {
       await trackDownload(tool.id)
       downloadPdfFromBase64(file.base64, file.filename)
-      toast({
-        title: 'Download concluído!',
-        description: 'Quer receber mais materiais gratuitos por e-mail?',
-        action: (
-          <ToastAction altText="Inscrever na newsletter" onClick={scrollToNewsletter}>
-            Quero receber
-          </ToastAction>
-        ),
-      })
     } catch {
       toast({ title: 'Erro ao baixar', variant: 'destructive' })
     }
@@ -136,8 +136,7 @@ export default function FreeTools() {
             Receba nossas ferramentas por e-mail
           </h2>
           <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">
-            Algumas ferramentas estão sendo preparadas. Inscreva-se para ser avisado quando
-            estiverem disponíveis.
+            Receba novos materiais gratuitos por e-mail assim que forem publicados.
           </p>
           <form
             onSubmit={handleSubscribe}
