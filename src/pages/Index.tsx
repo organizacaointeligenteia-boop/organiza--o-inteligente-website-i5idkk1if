@@ -22,6 +22,7 @@ import {
   FileText,
   Wallet,
   RefreshCw,
+  Mail,
 } from 'lucide-react'
 
 export default function Index() {
@@ -69,6 +70,10 @@ export default function Index() {
   }
 
   const handleDownload = async (tool: Download) => {
+    if (!tool.fileUrl) {
+      scrollToNewsletter()
+      return
+    }
     try {
       await trackDownload(tool.id)
       toast({ title: 'Download iniciado', description: 'O arquivo está sendo baixado.' })
@@ -284,13 +289,23 @@ export default function Index() {
                   <CardDescription className="mt-3 text-[15px]">{tool.description}</CardDescription>
                 </CardHeader>
                 <CardFooter className="p-6 pt-0">
-                  <Button
-                    variant="default"
-                    className="w-full gap-2 font-semibold"
-                    onClick={() => handleDownload(tool)}
-                  >
-                    <DownloadIcon className="h-[18px] w-[18px]" /> Baixar Arquivo
-                  </Button>
+                  {tool.fileUrl ? (
+                    <Button
+                      variant="default"
+                      className="w-full gap-2 font-semibold"
+                      onClick={() => handleDownload(tool)}
+                    >
+                      <DownloadIcon className="h-[18px] w-[18px]" /> Baixar Arquivo
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 font-semibold"
+                      onClick={() => handleDownload(tool)}
+                    >
+                      <Mail className="h-[18px] w-[18px]" /> Receber por e-mail
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             ))}
