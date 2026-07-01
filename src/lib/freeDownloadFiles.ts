@@ -118,7 +118,7 @@ export const freeDownloadFiles: FreeDownloadFile[] = [
   },
 ]
 
-export function downloadPdfFromBase64(base64: string, filename: string) {
+export function createPdfBlobUrl(base64: string): string {
   const byteCharacters = atob(base64)
   const byteNumbers = new Array(byteCharacters.length)
   for (let i = 0; i < byteCharacters.length; i++) {
@@ -126,7 +126,11 @@ export function downloadPdfFromBase64(base64: string, filename: string) {
   }
   const byteArray = new Uint8Array(byteNumbers)
   const blob = new Blob([byteArray], { type: 'application/pdf' })
-  const url = URL.createObjectURL(blob)
+  return URL.createObjectURL(blob)
+}
+
+export function downloadPdfFromBase64(base64: string, filename: string) {
+  const url = createPdfBlobUrl(base64)
   const link = document.createElement('a')
   link.href = url
   link.download = filename
