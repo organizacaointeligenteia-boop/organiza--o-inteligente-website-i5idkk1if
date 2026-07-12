@@ -188,11 +188,7 @@ export default function ArticlePage() {
             size="icon"
             className="rounded-full h-12 w-12 hover:bg-primary hover:text-white"
             asChild
-          >
-            <a href={shareLinks.twitter} target="_blank" rel="noreferrer">
-              <Twitter className="h-5 w-5" />
-            </a>
-          </Button>
+          ></Button>
           <Button
             variant="outline"
             size="icon"
