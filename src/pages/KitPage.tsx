@@ -24,8 +24,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
-const MAILTO_LINK =
-  'mailto:contato@organizacaointeligente.com.br?subject=Quero%20o%20Kit%20Organizacao%20Inteligente'
+const KIWIFY_CHECKOUT_URL = 'https://pay.kiwify.com.br/qpFPGxF'
 
 const targetAudience = [
   'Para quem sente que a semana começa bagunçada.',
@@ -111,7 +110,9 @@ export default function KitPage() {
               size="lg"
               className="bg-white text-primary hover:bg-white/90 font-semibold text-base px-8"
             >
-              <a href={MAILTO_LINK}>Quero organizar minha rotina agora</a>
+              <a href={KIWIFY_CHECKOUT_URL} target="_blank" rel="noopener noreferrer">
+                Quero organizar minha rotina agora
+              </a>
             </Button>
           </div>
         </div>
@@ -239,10 +240,12 @@ export default function KitPage() {
           </p>
         </div>
         <Button asChild size="lg" className="w-full sm:w-auto text-base font-semibold px-8 py-6">
-          <a href={MAILTO_LINK}>Quero organizar minha rotina agora</a>
+          <a href={KIWIFY_CHECKOUT_URL} target="_blank" rel="noopener noreferrer">
+            Quero organizar minha rotina agora
+          </a>
         </Button>
         <p className="text-sm text-muted-foreground">
-          Pagamento via PIX ou cartão. Entrega imediata por e-mail.
+          Pagamento via Pix, cartão ou boleto. Entrega imediata por e-mail.
         </p>
       </section>
 
@@ -278,7 +281,9 @@ export default function KitPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
           <Button asChild size="lg" className="font-semibold px-8">
-            <a href={MAILTO_LINK}>Quero organizar minha rotina agora</a>
+            <a href={KIWIFY_CHECKOUT_URL} target="_blank" rel="noopener noreferrer">
+              Quero organizar minha rotina agora
+            </a>
           </Button>
           <Button asChild variant="outline" size="lg" className="border-primary text-primary">
             <Link to="/ferramentas-gratuitas">
