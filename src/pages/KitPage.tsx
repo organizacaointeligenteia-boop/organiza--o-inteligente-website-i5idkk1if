@@ -90,7 +90,7 @@ export default function KitPage() {
   usePageTitle('Kit Organização Inteligente | Sistema completo de organização')
 
   return (
-    <div className="flex flex-col gap-20 pb-16 animate-fade-in">
+    <div className="flex flex-col gap-12 md:gap-20 pb-16 animate-fade-in">
       <section className="relative text-center py-20 md:py-28 px-6 md:px-12 bg-gradient-to-br from-primary to-primary-light text-white rounded-[24px] overflow-hidden shadow-medium mx-auto w-full">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col items-center justify-center max-w-[800px] mx-auto space-y-6">
