@@ -156,7 +156,7 @@ export default function KitPage() {
         <div className="max-w-[700px] mx-auto space-y-4">
           {[
             'Você finaliza a compra com segurança pela Kiwify (Pix, cartão ou boleto).',
-            'Após a confirmação do pagamento, você recebe as instruções de acesso por e-mail.',
+            'Após a confirmação do pagamento, você recebe por e-mail as instruções para acessar o Kit.',
             'Faça o download dos 7 materiais em PDF e comece a usar imediatamente.',
           ].map((step, i) => (
             <div
