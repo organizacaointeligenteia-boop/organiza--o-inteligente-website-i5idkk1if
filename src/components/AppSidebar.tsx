@@ -20,7 +20,6 @@ import {
   Home,
   Info,
   Mail,
-  Settings,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -69,24 +68,6 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 )
               })}
-              <SidebarMenuItem className="mt-4">
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/admin"
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-3 min-h-[44px] rounded-lg mx-2 px-3 transition-colors duration-200',
-                        isActive
-                          ? 'text-primary font-medium bg-primary/15'
-                          : 'text-muted-foreground hover:bg-primary/10 hover:text-primary',
-                      )
-                    }
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span className="text-[15px]">Administração</span>
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -345,8 +345,8 @@ export default function Index() {
             Kit Organização Inteligente
           </h2>
           <p className="text-lg text-primary-foreground/90 leading-relaxed">
-            O primeiro produto pago pode reunir checklist da vida organizada, planner semanal,
-            controle de documentos, mapa financeiro básico e rotina de revisão de domingo.
+            Um produto digital prático com 7 materiais em PDF para organizar sua rotina, hábitos,
+            prioridades e documentos — pronto para imprimir ou usar digitalmente.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             {kitItems.map((item) => (

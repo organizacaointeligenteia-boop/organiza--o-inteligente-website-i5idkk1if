@@ -115,7 +115,65 @@ export default function KitPage() {
               </a>
             </Button>
           </div>
+          <p className="text-sm text-white/80 animate-fade-in-up pt-2">
+            Pagamento seguro pela Kiwify • Pix, cartão ou boleto • Garantia de 7 dias
+          </p>
         </div>
+      </section>
+
+      <section className="space-y-10 animate-fade-in-up">
+        <div className="text-center">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Veja o que você recebe</h2>
+          <p className="text-muted-foreground text-lg mt-3 max-w-[600px] mx-auto">
+            Sete materiais práticos em formato digital, prontos para usar imediatamente.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[1000px] mx-auto">
+          {kitContents.map((item) => (
+            <div
+              key={item.label}
+              className="flex flex-col bg-card border border-border rounded-xl p-5 transition-all duration-200 hover:shadow-small"
+            >
+              <div className="w-11 h-11 bg-primary/10 text-primary rounded-xl flex items-center justify-center flex-shrink-0 mb-4">
+                <item.icon className="h-5 w-5" />
+              </div>
+              <span className="text-base font-semibold leading-snug mb-2">{item.label}</span>
+              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                arquivo digital em PDF
+              </span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-20 rounded-[32px] space-y-10">
+        <div className="text-center space-y-4">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Como você recebe</h2>
+          <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">
+            Veja o passo a passo do que acontece depois da sua compra.
+          </p>
+        </div>
+        <div className="max-w-[700px] mx-auto space-y-4">
+          {[
+            'Você finaliza a compra com segurança pela Kiwify (Pix, cartão ou boleto).',
+            'Após a confirmação do pagamento, você recebe as instruções de acesso por e-mail.',
+            'Faça o download dos 7 materiais em PDF e comece a usar imediatamente.',
+          ].map((step, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-5 bg-card border border-border rounded-xl px-6 py-4"
+            >
+              <span className="flex-shrink-0 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
+                {i + 1}
+              </span>
+              <span className="text-[16px] font-medium leading-relaxed">{step}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-center text-sm text-muted-foreground max-w-[500px] mx-auto">
+          O acesso é enviado após a confirmação do pagamento. Pagamentos via Pix costumam ser
+          confirmados em minutos; boleto pode levar até 2 dias úteis.
+        </p>
       </section>
 
       <section className="max-w-[800px] mx-auto text-center space-y-4 animate-fade-in-up">
@@ -236,7 +294,7 @@ export default function KitPage() {
             </span>
           </div>
           <p className="text-muted-foreground text-lg">
-            Acesso imediato a todos os modelos do kit.
+            Acesso a todos os modelos do kit após confirmação do pagamento.
           </p>
         </div>
         <Button asChild size="lg" className="w-full sm:w-auto text-base font-semibold px-8 py-6">
@@ -245,7 +303,7 @@ export default function KitPage() {
           </a>
         </Button>
         <p className="text-sm text-muted-foreground">
-          Pagamento via Pix, cartão ou boleto. Entrega imediata por e-mail.
+          Pagamento via Pix, cartão ou boleto. Acesso enviado por e-mail após confirmação.
         </p>
       </section>
 
@@ -291,6 +349,9 @@ export default function KitPage() {
             </Link>
           </Button>
         </div>
+        <p className="text-sm text-muted-foreground pt-2">
+          Pagamento seguro pela Kiwify • Pix, cartão ou boleto • Garantia de 7 dias
+        </p>
       </section>
     </div>
   )
