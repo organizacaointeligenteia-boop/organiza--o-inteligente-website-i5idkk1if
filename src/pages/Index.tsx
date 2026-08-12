@@ -160,10 +160,10 @@ export default function Index() {
             <Button
               variant="outline"
               size="lg"
+              asChild
               className="bg-transparent text-white border-white/30 hover:bg-white/10 w-full sm:w-auto font-medium"
-              onClick={scrollToNewsletter}
             >
-              Receber checklist gratuito
+              <Link to="/diagnostico">Receber checklist gratuito</Link>
             </Button>
           </div>
         </div>

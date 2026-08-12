@@ -17,6 +17,7 @@ export const navLinks = [
   { to: '/sobre', label: 'Sobre' },
   { to: '/contato', label: 'Contato' },
   { to: '/kit-organizacao-inteligente', label: 'Kit' },
+  { to: '/diagnostico', label: 'Diagnóstico' },
 ]
 
 export function Header() {
