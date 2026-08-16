@@ -61,6 +61,7 @@ const App = () => (
                 <Route path="/termos" element={<Terms />} />
                 <Route path="/privacidade" element={<Privacy />} />
                 <Route path="/kit-organizacao-inteligente" element={<KitPage />} />
+                {/* Diagnóstico quiz — production deploy */}
                 <Route path="/diagnostico" element={<Diagnostico />} />
                 <Route element={<ProtectedRoute />}>
                   <Route path="/admin" element={<Admin />} />
