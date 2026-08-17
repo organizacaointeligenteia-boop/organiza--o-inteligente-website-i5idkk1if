@@ -3,6 +3,16 @@ routerAdd('POST', '/backend/v1/newsletter/subscribe', (e) => {
   const email = body.email
   const source = body.source || ''
 
+  // Diagnóstico requires explicit consent before subscribing.
+  if (source === 'OI - Diagnóstico concluído' && body.consent !== true) {
+    throw new BadRequestError('Consentimento necessário', {
+      consent: new ValidationError(
+        'validation_required',
+        'É necessário aceitar receber comunicações.',
+      ),
+    })
+  }
+
   if (!email || typeof email !== 'string' || !email.includes('@')) {
     throw new BadRequestError('Email inválido', {
       email: new ValidationError('validation_invalid_email', 'Email inválido'),

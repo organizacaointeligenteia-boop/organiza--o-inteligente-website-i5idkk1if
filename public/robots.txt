@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://organizacao-inteligente-website-943ee.goskip.app/sitemap.xml

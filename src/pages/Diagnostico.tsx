@@ -226,6 +226,7 @@ export default function Diagnostico() {
           email,
           name,
           source: 'OI - Diagnóstico concluído',
+          consent: consent === true,
         }),
         headers: { 'Content-Type': 'application/json' },
       })
@@ -361,6 +362,33 @@ export default function Diagnostico() {
             </CardContent>
           </Card>
 
+          {/* Kit presentation */}
+          <Card className="border-border shadow-sm bg-secondary/40">
+            <CardContent className="p-8 space-y-5">
+              <div className="flex items-start gap-3">
+                <FileText className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <p className="font-semibold text-foreground text-lg">
+                    Kit Organização Inteligente
+                  </p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    Sete PDFs práticos para organizar rotina, prioridades, hábitos e documentos sem
+                    começar do zero.
+                  </p>
+                </div>
+              </div>
+              <Button asChild className="w-full gap-2">
+                <a
+                  href="https://pay.kiwify.com.br/qpFPGxF"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Quero conhecer o Kit <ArrowRight className="h-4 w-4" />
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Post-result form */}
           <Card className="border-border shadow-sm" id="formulario">
             <CardHeader>
@@ -407,7 +435,8 @@ export default function Diagnostico() {
                       className="mt-0.5"
                     />
                     <span className="text-sm text-muted-foreground leading-relaxed">
-                      Aceito receber materiais e comunicações de Organização Inteligente
+                      Aceito receber o Checklist e comunicações da Organização Inteligente. Posso
+                      sair da lista quando quiser.
                     </span>
                   </label>
                   <Button
