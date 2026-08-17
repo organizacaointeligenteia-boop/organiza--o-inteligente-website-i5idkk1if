@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { getAffiliates, type AffiliateLink } from '@/services/affiliates'
+import { fetchWithTimeout } from '@/lib/apiHelpers'
+import { getStaticAffiliates } from '@/lib/staticCatalog'
 import { useRealtime } from '@/hooks/use-realtime'
 import { ExternalLink, InboxIcon, ShoppingBag } from 'lucide-react'
 
@@ -14,9 +16,9 @@ export default function Recommended() {
   const [loading, setLoading] = useState(true)
 
   const loadAffiliates = () => {
-    getAffiliates()
-      .then(setAffiliates)
-      .catch(console.error)
+    fetchWithTimeout(getAffiliates(), 5000)
+      .then((data) => setAffiliates(data.length > 0 ? data : getStaticAffiliates()))
+      .catch(() => setAffiliates(getStaticAffiliates()))
       .finally(() => setLoading(false))
   }
 

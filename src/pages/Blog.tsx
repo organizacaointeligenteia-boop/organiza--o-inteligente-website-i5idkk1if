@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { getArticlesList, type Article } from '@/services/articles'
+import { fetchWithTimeout } from '@/lib/apiHelpers'
+import { getStaticArticles } from '@/lib/staticCatalog'
 import { useRealtime } from '@/hooks/use-realtime'
 import { ArrowRight, Calendar, Search, ChevronLeft, ChevronRight, Inbox } from 'lucide-react'
 
@@ -45,12 +47,23 @@ export default function Blog() {
     }
 
     setLoading(true)
-    getArticlesList(page, PER_PAGE, filter)
+    fetchWithTimeout(getArticlesList(page, PER_PAGE, filter), 5000)
       .then((res) => {
-        setArticles(res.items)
-        setTotalPages(res.totalPages || 1)
+        const items = res.items || []
+        if (items.length > 0) {
+          setArticles(items)
+          setTotalPages(res.totalPages || 1)
+        } else {
+          // Backend returned empty — fall back to static catalog so the Blog
+          // never renders an empty state during a cold start.
+          setArticles(getStaticArticles())
+          setTotalPages(1)
+        }
       })
-      .catch(console.error)
+      .catch(() => {
+        setArticles(getStaticArticles())
+        setTotalPages(1)
+      })
       .finally(() => setLoading(false))
   }
 

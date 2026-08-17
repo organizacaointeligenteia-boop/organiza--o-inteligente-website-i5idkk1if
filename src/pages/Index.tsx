@@ -15,6 +15,8 @@ import {
   getDownloadLabel,
   type DownloadUrl,
 } from '@/lib/freeDownloadFiles'
+import { fetchWithTimeout } from '@/lib/apiHelpers'
+import { getStaticArticles, getStaticDownloads } from '@/lib/staticCatalog'
 import { cn } from '@/lib/utils'
 import { ToastAction } from '@/components/ui/toast'
 import {
@@ -42,12 +44,25 @@ export default function Index() {
   const newsletterEmailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    let cancelled = false
     Promise.all([
-      getArticles(4, 0).then(setArticles),
-      getDownloads().then((data) => setTools(data.slice(0, 4))),
+      fetchWithTimeout(getArticles(4, 0), 5000)
+        .then((data) => (data.length > 0 ? data : getStaticArticles()))
+        .catch(() => getStaticArticles()),
+      fetchWithTimeout(getDownloads(), 5000)
+        .then((data) => (data.length > 0 ? data.slice(0, 4) : getStaticDownloads().slice(0, 4)))
+        .catch(() => getStaticDownloads().slice(0, 4)),
     ])
-      .finally(() => setLoading(false))
+      .then(([a, t]) => {
+        if (cancelled) return
+        setArticles(a)
+        setTools(t)
+      })
+      .finally(() => !cancelled && setLoading(false))
       .catch(console.error)
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const downloadUrls = useMemo(() => {
@@ -64,7 +79,6 @@ export default function Index() {
   useEffect(() => {
     return () => {
       Object.values(downloadUrls).forEach(({ url }) => {
-        // Only revoke Blob URLs; direct public paths are not object URLs.
         if (url.startsWith('blob:')) URL.revokeObjectURL(url)
       })
     }
@@ -79,18 +93,25 @@ export default function Index() {
         body: JSON.stringify({ email: formData.get('email'), name: formData.get('name') }),
         headers: { 'Content-Type': 'application/json' },
       })
-      if (res.success) {
+      if (res?.success) {
         toast({
           title: 'Tudo pronto!',
           description: 'Inscrição realizada com sucesso',
           className: 'bg-green-600 text-white border-none',
         })
         ;(e.target as HTMLFormElement).reset()
+      } else {
+        // Backend responded but reported failure — show a clear error so the
+        // user can retry instead of silently faking success.
+        throw new Error(res?.message || 'Não foi possível concluir a inscrição. Tente novamente.')
       }
     } catch (err: any) {
       toast({
-        title: 'Erro',
-        description: err.response?.message || 'Erro ao processar',
+        title: 'Erro na inscrição',
+        description:
+          err?.response?.message ||
+          err?.message ||
+          'Serviço indisponível no momento. Tente novamente em instantes.',
         variant: 'destructive',
       })
     }

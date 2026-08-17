@@ -244,8 +244,11 @@ export default function Diagnostico() {
       }
     } catch (err: any) {
       toast({
-        title: 'Erro',
-        description: err?.response?.message || err?.message || 'Erro ao processar',
+        title: 'Erro na inscrição',
+        description:
+          err?.response?.message ||
+          err?.message ||
+          'Serviço indisponível no momento. Tente novamente em instantes.',
         variant: 'destructive',
       })
     } finally {

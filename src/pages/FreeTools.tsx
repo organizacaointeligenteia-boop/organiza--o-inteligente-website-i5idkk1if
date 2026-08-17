@@ -13,6 +13,8 @@ import {
   getDownloadLabel,
   type DownloadUrl,
 } from '@/lib/freeDownloadFiles'
+import { fetchWithTimeout } from '@/lib/apiHelpers'
+import { getStaticDownloads } from '@/lib/staticCatalog'
 import { ToastAction } from '@/components/ui/toast'
 import { Download as DownloadIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -24,7 +26,9 @@ export default function FreeTools() {
   const newsletterRef = useRef<HTMLInputElement>(null)
 
   const loadTools = () => {
-    getDownloads().then(setTools).catch(console.error)
+    fetchWithTimeout(getDownloads(), 5000)
+      .then((data) => setTools(data.length > 0 ? data : getStaticDownloads()))
+      .catch(() => setTools(getStaticDownloads()))
   }
 
   useEffect(() => {
@@ -82,18 +86,25 @@ export default function FreeTools() {
         body: JSON.stringify({ email: formData.get('email') }),
         headers: { 'Content-Type': 'application/json' },
       })
-      if (res.success) {
+      if (res?.success) {
         toast({
           title: 'Inscrição realizada!',
           description: res.message,
           className: 'bg-green-600 text-white border-none',
         })
         ;(e.target as HTMLFormElement).reset()
+      } else {
+        // Backend responded but reported failure — surface a clear error so
+        // the user can retry instead of silently faking success.
+        throw new Error(res?.message || 'Não foi possível concluir a inscrição. Tente novamente.')
       }
     } catch (err: any) {
       toast({
-        title: 'Erro',
-        description: err.response?.message || 'Ocorreu um erro',
+        title: 'Erro na inscrição',
+        description:
+          err?.response?.message ||
+          err?.message ||
+          'Serviço indisponível no momento. Tente novamente em instantes.',
         variant: 'destructive',
       })
     }
