@@ -222,13 +222,7 @@ export default function Diagnostico() {
     try {
       const res = await pb.send('/backend/v1/newsletter/subscribe', {
         method: 'POST',
-        body: JSON.stringify({
-          email,
-          name,
-          source: 'OI - Diagnóstico concluído',
-          consent: consent === true,
-        }),
-        headers: { 'Content-Type': 'application/json' },
+        body: { email, name, source: 'OI - Diagnóstico concluído', consent: true },
       })
       if (res?.success) {
         setSubscribed(true)
