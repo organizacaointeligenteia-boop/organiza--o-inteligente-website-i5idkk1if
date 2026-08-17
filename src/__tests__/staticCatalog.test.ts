@@ -70,12 +70,34 @@ describe('staticCatalog', () => {
       expect(articles.length).toBeGreaterThan(0)
     })
 
-    it('returns 4 featured articles with slugs', () => {
+    it('returns exactly 17 articles', () => {
       const articles = getStaticArticles()
-      expect(articles).toHaveLength(4)
+      expect(articles).toHaveLength(17)
+    })
+
+    it('every article has a truthy slug and title', () => {
+      const articles = getStaticArticles()
       for (const a of articles) {
         expect(a.slug).toBeTruthy()
         expect(a.title).toBeTruthy()
+      }
+    })
+
+    it('all 17 slugs are unique', () => {
+      const articles = getStaticArticles()
+      const slugs = articles.map((a) => a.slug)
+      const uniqueSlugs = new Set(slugs)
+      expect(uniqueSlugs.size).toBe(slugs.length)
+      expect(uniqueSlugs.size).toBe(17)
+    })
+
+    it('each article slug resolves via find() against the array', () => {
+      const articles = getStaticArticles()
+      for (const a of articles) {
+        const expectedSlug = a.slug
+        const found = articles.find((item) => item.slug === expectedSlug)
+        expect(found, `expected to find article with slug "${expectedSlug}"`).toBeDefined()
+        expect(found?.slug).toBe(expectedSlug)
       }
     })
   })
