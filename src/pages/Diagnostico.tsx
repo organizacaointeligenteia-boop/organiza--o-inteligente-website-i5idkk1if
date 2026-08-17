@@ -219,16 +219,16 @@ export default function Diagnostico() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/backend/v1/newsletter/subscribe', {
+      const res = await fetch('/backend/v1/diagnosis/subscribe', {
         method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, name, source: 'OI - Diagnóstico concluído', consent: true }),
+        body: JSON.stringify({ email, name, consent: 'granted' }),
       })
       const data = await res.json()
-      if (data?.success) {
+      if (data?.success && data?.consentReceived) {
         setSubscribed(true)
         toast({
           title: 'Tudo pronto!',
