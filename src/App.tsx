@@ -34,7 +34,7 @@ const LoadingFallback = () => (
 
 const App = () => (
   <ThemeProvider defaultTheme="light" storageKey="theme">
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <BrowserRouter>
       <AuthProvider>
         <TooltipProvider>
           <Toaster />

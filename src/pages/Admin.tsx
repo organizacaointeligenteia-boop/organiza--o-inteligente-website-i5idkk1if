@@ -311,7 +311,22 @@ export default function Admin() {
                       <TableCell>{a.category}</TableCell>
                       <TableCell>{new Date(a.publishedAt).toLocaleDateString('pt-BR')}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => setArticleForm({ ...a })}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() =>
+                            setArticleForm({
+                              id: a.id,
+                              title: a.title,
+                              slug: a.slug,
+                              excerpt: a.excerpt || '',
+                              content: a.content,
+                              featuredImage: a.featuredImage || '',
+                              category: a.category,
+                              readingTime: a.readingTime || 5,
+                            })
+                          }
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
