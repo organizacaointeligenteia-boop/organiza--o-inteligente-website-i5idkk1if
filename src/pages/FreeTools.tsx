@@ -7,7 +7,12 @@ import { getDownloads, trackDownload, type Download } from '@/services/downloads
 import { useRealtime } from '@/hooks/use-realtime'
 import { useToast } from '@/hooks/use-toast'
 import pb from '@/lib/pocketbase/client'
-import { findFreeDownloadFile, createPdfBlobUrl } from '@/lib/freeDownloadFiles'
+import {
+  findFreeDownloadFile,
+  getDownloadUrl,
+  getDownloadLabel,
+  type DownloadUrl,
+} from '@/lib/freeDownloadFiles'
 import { ToastAction } from '@/components/ui/toast'
 import { Download as DownloadIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -31,11 +36,11 @@ export default function FreeTools() {
   })
 
   const downloadUrls = useMemo(() => {
-    const urls: Record<string, { url: string; filename: string }> = {}
+    const urls: Record<string, DownloadUrl> = {}
     for (const tool of tools) {
       const file = findFreeDownloadFile(tool.title)
       if (file) {
-        urls[tool.id] = { url: createPdfBlobUrl(file.base64), filename: file.filename }
+        urls[tool.id] = getDownloadUrl(file)
       }
     }
     return urls
@@ -43,7 +48,10 @@ export default function FreeTools() {
 
   useEffect(() => {
     return () => {
-      Object.values(downloadUrls).forEach(({ url }) => URL.revokeObjectURL(url))
+      Object.values(downloadUrls).forEach(({ url }) => {
+        // Only revoke Blob URLs; direct public paths are not object URLs.
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url)
+      })
     }
   }, [downloadUrls])
 
@@ -106,6 +114,7 @@ export default function FreeTools() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {tools.map((tool) => {
           const downloadInfo = downloadUrls[tool.id]
+          const file = findFreeDownloadFile(tool.title)
           return (
             <Card
               key={tool.id}
@@ -130,7 +139,8 @@ export default function FreeTools() {
                     onClick={() => handleDownloadClick(tool)}
                     className={cn(buttonVariants(), 'w-full gap-2 cursor-pointer')}
                   >
-                    <DownloadIcon className="h-4 w-4" /> Baixar PDF
+                    <DownloadIcon className="h-4 w-4" />{' '}
+                    {file ? getDownloadLabel(file) : 'Baixar PDF'}
                   </a>
                 ) : (
                   <Button className="w-full gap-2" onClick={scrollToNewsletter}>

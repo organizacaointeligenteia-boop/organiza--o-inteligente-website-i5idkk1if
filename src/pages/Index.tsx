@@ -9,7 +9,12 @@ import { useToast } from '@/hooks/use-toast'
 import { getArticles, type Article } from '@/services/articles'
 import { getDownloads, type Download, trackDownload } from '@/services/downloads'
 import pb from '@/lib/pocketbase/client'
-import { findFreeDownloadFile, createPdfBlobUrl } from '@/lib/freeDownloadFiles'
+import {
+  findFreeDownloadFile,
+  getDownloadUrl,
+  getDownloadLabel,
+  type DownloadUrl,
+} from '@/lib/freeDownloadFiles'
 import { cn } from '@/lib/utils'
 import { ToastAction } from '@/components/ui/toast'
 import {
@@ -46,11 +51,11 @@ export default function Index() {
   }, [])
 
   const downloadUrls = useMemo(() => {
-    const urls: Record<string, { url: string; filename: string }> = {}
+    const urls: Record<string, DownloadUrl> = {}
     for (const tool of tools) {
       const file = findFreeDownloadFile(tool.title)
       if (file) {
-        urls[tool.id] = { url: createPdfBlobUrl(file.base64), filename: file.filename }
+        urls[tool.id] = getDownloadUrl(file)
       }
     }
     return urls
@@ -58,7 +63,10 @@ export default function Index() {
 
   useEffect(() => {
     return () => {
-      Object.values(downloadUrls).forEach(({ url }) => URL.revokeObjectURL(url))
+      Object.values(downloadUrls).forEach(({ url }) => {
+        // Only revoke Blob URLs; direct public paths are not object URLs.
+        if (url.startsWith('blob:')) URL.revokeObjectURL(url)
+      })
     }
   }, [downloadUrls])
 
@@ -293,37 +301,47 @@ export default function Index() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {tools.map((tool) => (
-              <Card
-                key={tool.id}
-                className="flex flex-col bg-background border-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-medium"
-              >
-                <CardHeader className="flex-1 p-6">
-                  <CardTitle className="text-xl">{tool.title}</CardTitle>
-                  <CardDescription className="mt-3 text-[15px]">{tool.description}</CardDescription>
-                </CardHeader>
-                <CardFooter className="p-6 pt-0">
-                  {downloadUrls[tool.id] ? (
-                    <a
-                      href={downloadUrls[tool.id].url}
-                      download={downloadUrls[tool.id].filename}
-                      onClick={() => handleDownload(tool)}
-                      className={cn(buttonVariants(), 'w-full gap-2 font-semibold cursor-pointer')}
-                    >
-                      <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
-                    </a>
-                  ) : (
-                    <Button
-                      variant="default"
-                      className="w-full gap-2 font-semibold"
-                      onClick={scrollToNewsletter}
-                    >
-                      <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
-                    </Button>
-                  )}
-                </CardFooter>
-              </Card>
-            ))}
+            {tools.map((tool) => {
+              const file = findFreeDownloadFile(tool.title)
+              const downloadInfo = downloadUrls[tool.id]
+              return (
+                <Card
+                  key={tool.id}
+                  className="flex flex-col bg-background border-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-medium"
+                >
+                  <CardHeader className="flex-1 p-6">
+                    <CardTitle className="text-xl">{tool.title}</CardTitle>
+                    <CardDescription className="mt-3 text-[15px]">
+                      {tool.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardFooter className="p-6 pt-0">
+                    {downloadInfo ? (
+                      <a
+                        href={downloadInfo.url}
+                        download={downloadInfo.filename}
+                        onClick={() => handleDownload(tool)}
+                        className={cn(
+                          buttonVariants(),
+                          'w-full gap-2 font-semibold cursor-pointer',
+                        )}
+                      >
+                        <DownloadIcon className="h-[18px] w-[18px]" />{' '}
+                        {file ? getDownloadLabel(file) : 'Baixar PDF'}
+                      </a>
+                    ) : (
+                      <Button
+                        variant="default"
+                        className="w-full gap-2 font-semibold"
+                        onClick={scrollToNewsletter}
+                      >
+                        <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
+                      </Button>
+                    )}
+                  </CardFooter>
+                </Card>
+              )
+            })}
           </div>
         )}
         <div className="text-center pt-8">
