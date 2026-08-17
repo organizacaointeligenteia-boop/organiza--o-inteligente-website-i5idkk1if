@@ -4,7 +4,8 @@ routerAdd('POST', '/backend/v1/newsletter/subscribe', (e) => {
   const source = body.source || ''
 
   // Diagnóstico requires explicit consent before subscribing.
-  if (source === 'OI - Diagnóstico concluído' && body.consent !== true) {
+  const consented = body.consent === true || body.consent === 'true'
+  if (source === 'OI - Diagnóstico concluído' && !consented) {
     throw new BadRequestError('Consentimento necessário', {
       consent: new ValidationError(
         'validation_required',

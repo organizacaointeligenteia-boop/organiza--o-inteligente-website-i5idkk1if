@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { useToast } from '@/hooks/use-toast'
-import pb from '@/lib/pocketbase/client'
 import { ArrowLeft, ArrowRight, CalendarDays, FileText, ListChecks, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -220,11 +219,16 @@ export default function Diagnostico() {
 
     setSubmitting(true)
     try {
-      const res = await pb.send('/backend/v1/newsletter/subscribe', {
+      const res = await fetch('/backend/v1/newsletter/subscribe', {
         method: 'POST',
-        body: { email, name, source: 'OI - Diagnóstico concluído', consent: true },
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, name, source: 'OI - Diagnóstico concluído', consent: true }),
       })
-      if (res?.success) {
+      const data = await res.json()
+      if (data?.success) {
         setSubscribed(true)
         toast({
           title: 'Tudo pronto!',
@@ -234,7 +238,7 @@ export default function Diagnostico() {
         form.reset()
         setConsent(false)
       } else {
-        throw new Error(res?.message || 'Erro ao processar')
+        throw new Error(data?.message || 'Erro ao processar')
       }
     } catch (err: any) {
       toast({
