@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,7 +21,12 @@ import { Download as DownloadIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function FreeTools() {
-  usePageTitle('Ferramentas Gratuitas | Organização Inteligente')
+  usePageTitle('Ferramentas Gratuitas')
+  usePageMeta({
+    path: '/ferramentas-gratuitas',
+    description:
+      'Baixe nossos templates e planilhas desenhados para economizar seu tempo e impulsionar seus resultados.',
+  })
   const { toast } = useToast()
   const [tools, setTools] = useState<Download[]>([])
   const newsletterRef = useRef<HTMLInputElement>(null)

@@ -1,8 +1,14 @@
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { Target, Zap, Clock } from 'lucide-react'
 
 export default function About() {
   usePageTitle('Sobre Nós')
+  usePageMeta({
+    path: '/sobre',
+    description:
+      'Nascemos com um propósito simples: tornar a produtividade acessível para quem não tem tempo a perder.',
+  })
 
   return (
     <div className="max-w-4xl mx-auto space-y-12 animate-fade-in py-8">

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { getArticles, type Article } from '@/services/articles'
 import { ArrowRight } from 'lucide-react'
 
@@ -10,8 +11,20 @@ interface Props {
   title: string
 }
 
+const categorySlug = (title: string) =>
+  '/' +
+  title
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '-')
+
 export default function Category({ title }: Props) {
   usePageTitle(title)
+  usePageMeta({
+    path: categorySlug(title),
+    description: `Descubra nossos melhores conteúdos sobre ${title.toLowerCase()}. Comece com pequenos passos e transforme sua rotina com inteligência.`,
+  })
   const [articles, setArticles] = useState<Article[]>([])
 
   useEffect(() => {

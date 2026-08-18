@@ -5,6 +5,7 @@ import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/comp
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { useToast } from '@/hooks/use-toast'
 import { getArticles, type Article } from '@/services/articles'
 import { getDownloads, type Download, trackDownload } from '@/services/downloads'
@@ -35,7 +36,12 @@ import {
 } from 'lucide-react'
 
 export default function Index() {
-  usePageTitle('Organização Inteligente | Rotina, foco e execução para profissionais ocupados')
+  usePageTitle('Rotina, foco e execução para profissionais ocupados')
+  usePageMeta({
+    path: '/',
+    description:
+      'Ferramentas práticas, guias e checklists para organizar rotina, prioridades e documentos sem complicar o dia.',
+  })
   const { toast } = useToast()
 
   const [articles, setArticles] = useState<Article[]>([])

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -11,7 +12,12 @@ import { useRealtime } from '@/hooks/use-realtime'
 import { ExternalLink, InboxIcon, ShoppingBag } from 'lucide-react'
 
 export default function Recommended() {
-  usePageTitle('Recomendados | Organização Inteligente')
+  usePageTitle('Recomendados')
+  usePageMeta({
+    path: '/recomendados',
+    description:
+      'Selecionamos livros, cursos, aplicativos e ferramentas que ajudam a organizar sua rotina e potencializar sua produtividade.',
+  })
   const [affiliates, setAffiliates] = useState<AffiliateLink[]>([])
   const [loading, setLoading] = useState(true)
 

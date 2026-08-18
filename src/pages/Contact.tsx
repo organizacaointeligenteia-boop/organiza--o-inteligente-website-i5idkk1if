@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
@@ -11,6 +12,11 @@ const CONTACT_EMAIL = 'contato@organizacaointeligente.com.br'
 
 export default function Contact() {
   usePageTitle('Contato')
+  usePageMeta({
+    path: '/contato',
+    description:
+      'Tem dúvidas, sugestões ou quer compartilhar uma história de sucesso? Adoraríamos ouvir você.',
+  })
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
 

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { useToast } from '@/hooks/use-toast'
 import { ArrowLeft, ArrowRight, CalendarDays, FileText, ListChecks, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -143,7 +144,12 @@ const DIAGNOSIS: Record<
 }
 
 export default function Diagnostico() {
-  usePageTitle('Diagnóstico | Organização Inteligente')
+  usePageTitle('Diagnóstico')
+  usePageMeta({
+    path: '/diagnostico',
+    description:
+      'Descubra qual ponto está travando sua organização. Responda 5 perguntas rápidas e identifique o gargalo que mais impacta sua rotina hoje.',
+  })
   const { toast } = useToast()
 
   const [current, setCurrent] = useState(0)

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { getArticleBySlug, getArticlesList, type Article } from '@/services/articles'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -24,7 +25,11 @@ export default function ArticlePage() {
   const [related, setRelated] = useState<Article[]>([])
   const { toast } = useToast()
 
-  usePageTitle(article?.title ? `${article.title} | Organização Inteligente` : 'Carregando...')
+  usePageTitle(article?.title || 'Carregando...')
+  usePageMeta({
+    path: article ? `/blog/${article.slug}` : undefined,
+    description: article?.excerpt,
+  })
 
   useEffect(() => {
     if (slug) {

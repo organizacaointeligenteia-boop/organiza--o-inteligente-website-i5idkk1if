@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { getArticlesList, type Article } from '@/services/articles'
 import { fetchWithTimeout } from '@/lib/apiHelpers'
 import { getStaticArticles } from '@/lib/staticCatalog'
@@ -23,7 +24,12 @@ const CATEGORIES = [
 const PER_PAGE = 12
 
 export default function Blog() {
-  usePageTitle('Blog Premium | Organização Inteligente')
+  usePageTitle('Blog')
+  usePageMeta({
+    path: '/blog',
+    description:
+      'Artigos diretos ao ponto sobre produtividade, hábitos e organização em alto nível.',
+  })
 
   const [searchParams, setSearchParams] = useSearchParams()
   const initialCat = searchParams.get('cat') || 'Todos'

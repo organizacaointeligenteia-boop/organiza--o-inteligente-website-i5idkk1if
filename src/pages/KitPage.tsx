@@ -1,4 +1,5 @@
 import { usePageTitle } from '@/hooks/use-page-title'
+import { usePageMeta } from '@/hooks/use-page-meta'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import {
@@ -87,7 +88,12 @@ const faqItems = [
 ]
 
 export default function KitPage() {
-  usePageTitle('Kit Organização Inteligente | Sistema completo de organização')
+  usePageTitle('Kit — Sistema completo de organização')
+  usePageMeta({
+    path: '/kit-organizacao-inteligente',
+    description:
+      'Organize sua semana, seus documentos, seus hábitos e suas prioridades com um sistema simples, pronto para imprimir ou usar digitalmente.',
+  })
 
   return (
     <div className="flex flex-col gap-12 md:gap-20 pb-16 animate-fade-in">
