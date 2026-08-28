@@ -36,7 +36,7 @@ import {
 } from 'lucide-react'
 
 export default function Index() {
-  usePageTitle('Rotina, foco e execução para profissionais ocupados')
+  usePageTitle('Organização Inteligente | Rotina, foco e execução para profissionais ocupados')
   usePageMeta({
     path: '/',
     description:
