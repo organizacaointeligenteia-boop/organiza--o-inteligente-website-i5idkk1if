@@ -11,17 +11,18 @@ import {
 import {
   CheckCircle2,
   Download,
-  Printer,
   ListChecks,
   Target,
   CalendarDays,
   RefreshCw,
-  BookOpen,
   ShieldCheck,
   ArrowRight,
   Sparkles,
   Clock,
   FileText,
+  Video,
+  Presentation,
+  Check,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -36,14 +37,66 @@ const targetAudience = [
   'Para quem quer um método simples para revisar a vida toda semana.',
 ]
 
-const kitContents = [
-  { icon: CalendarDays, label: 'Planner Semanal Premium' },
-  { icon: ListChecks, label: 'Checklist da Vida Organizada Expandido' },
-  { icon: RefreshCw, label: 'Controle de Hábitos Mensal' },
-  { icon: FileText, label: 'Controle de Documentos e Prazos' },
-  { icon: Target, label: 'Mapa de Prioridades' },
-  { icon: Clock, label: 'Rotina de Revisão Semanal' },
-  { icon: BookOpen, label: 'Guia Rápido de Uso em 7 dias' },
+const mainDeliverables = [
+  {
+    icon: FileText,
+    title: 'Workbook Premium em PDF',
+    badge: '26 páginas',
+    description:
+      'Material principal completo com método passo a passo e todos os 7 modelos práticos integrados para você preencher digitalmente ou imprimir.',
+  },
+  {
+    icon: Presentation,
+    title: 'Apresentação Visual',
+    badge: 'Slides explicativos',
+    description:
+      'Guia visual com os conceitos, fluxos e visão geral do método de organização para consulta rápida sempre que precisar.',
+  },
+  {
+    icon: Video,
+    title: 'Vídeo Introdutório',
+    badge: 'Boas-vindas e orientações',
+    description:
+      'Instruções diretas ao ponto sobre como navegar pelos materiais e começar a aplicar o sistema imediatamente na sua rotina.',
+  },
+]
+
+const workbookModels = [
+  {
+    icon: CalendarDays,
+    name: 'Planner semanal',
+    desc: 'Planejamento visual da semana com blocos de foco',
+  },
+  {
+    icon: ListChecks,
+    name: 'Checklist da vida organizada',
+    desc: 'Inventário completo de pendências e rotinas',
+  },
+  {
+    icon: RefreshCw,
+    name: 'Controle de hábitos',
+    desc: 'Acompanhamento de consistência diária e mensal',
+  },
+  {
+    icon: FileText,
+    name: 'Controle de documentos e prazos',
+    desc: 'Centralização de vencimentos e arquivos importantes',
+  },
+  {
+    icon: Target,
+    name: 'Mapa de prioridades',
+    desc: 'Matriz prática para focar no que realmente gera resultado',
+  },
+  {
+    icon: Clock,
+    name: 'Revisão semanal',
+    desc: 'Roteiro de 30 minutos para zerar a mente e planejar o próximo ciclo',
+  },
+  {
+    icon: CalendarDays,
+    name: 'Plano de implantação em 14 dias',
+    desc: 'Passo a passo guiado para instalar o sistema sem sobrecarga',
+  },
 ]
 
 const benefits = [
@@ -56,12 +109,12 @@ const benefits = [
 ]
 
 const steps = [
-  'Baixe o kit.',
-  'Imprima ou use no computador/tablet.',
-  'Comece pelo checklist expandido.',
-  'Monte suas prioridades.',
-  'Organize a semana.',
-  'Revise em 30 minutos toda semana.',
+  'Acesse a área de membros da Kiwify.',
+  'Assista ao vídeo introdutório e consulte a apresentação visual.',
+  'Abra o workbook premium em PDF (26 páginas).',
+  'Siga o plano de implantação em 14 dias.',
+  'Preencha os modelos digitalmente ou imprima os que preferir.',
+  'Faça a revisão semanal toda semana.',
 ]
 
 const faqItems = [
@@ -78,12 +131,12 @@ const faqItems = [
   {
     question: 'É um curso?',
     answer:
-      'Não é um curso. É um conjunto de modelos, checklists e planners prontos para usar, acompanhados de um guia rápido de 7 dias para você começar imediatamente.',
+      'Não é um curso longo. É um kit prático e guiado, composto por workbook em PDF, apresentação visual e vídeo introdutório, feito para ser aplicado em 14 dias.',
   },
   {
-    question: 'Recebo na hora?',
+    question: 'Como e quando recebo o acesso?',
     answer:
-      'Sim. Após a confirmação da compra, você recebe o link de download com todos os arquivos do kit imediatamente.',
+      'Assim que o pagamento for confirmado, você recebe por e-mail os dados para entrar na área de membros da Kiwify e acessar imediatamente o workbook premium em PDF, a apresentação visual e o vídeo introdutório.',
   },
 ]
 
@@ -128,25 +181,29 @@ export default function KitPage() {
       </section>
 
       <section className="space-y-10 animate-fade-in-up">
-        <div className="text-center">
+        <div className="text-center space-y-3">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Veja o que você recebe</h2>
-          <p className="text-muted-foreground text-lg mt-3 max-w-[600px] mx-auto">
-            Sete materiais práticos em formato digital, prontos para usar imediatamente.
+          <p className="text-muted-foreground text-lg max-w-[700px] mx-auto">
+            A entrega real do produto: um kit prático composto por 3 materiais complementares,
+            acessados diretamente na área de membros.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[1000px] mx-auto">
-          {kitContents.map((item) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[1050px] mx-auto">
+          {mainDeliverables.map((item) => (
             <div
-              key={item.label}
-              className="flex flex-col bg-card border border-border rounded-xl p-5 transition-all duration-200 hover:shadow-small"
+              key={item.title}
+              className="flex flex-col bg-card border border-border rounded-2xl p-6 transition-all duration-200 hover:shadow-medium hover:border-primary/40 relative overflow-hidden"
             >
-              <div className="w-11 h-11 bg-primary/10 text-primary rounded-xl flex items-center justify-center flex-shrink-0 mb-4">
-                <item.icon className="h-5 w-5" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                  <item.icon className="h-6 w-6" />
+                </div>
+                <span className="text-xs font-semibold bg-primary/10 text-primary px-3 py-1 rounded-full">
+                  {item.badge}
+                </span>
               </div>
-              <span className="text-base font-semibold leading-snug mb-2">{item.label}</span>
-              <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                arquivo digital em PDF
-              </span>
+              <h3 className="text-lg font-bold leading-snug mb-2">{item.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
             </div>
           ))}
         </div>
@@ -155,19 +212,20 @@ export default function KitPage() {
       <section className="bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-20 rounded-[32px] space-y-10">
         <div className="text-center space-y-4">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Como você recebe</h2>
-          <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">
-            Veja o passo a passo do que acontece depois da sua compra.
+          <p className="text-muted-foreground text-lg max-w-[650px] mx-auto">
+            O comprador acessa os três materiais pela área de membros da Kiwify depois da
+            confirmação do pagamento.
           </p>
         </div>
         <div className="max-w-[700px] mx-auto space-y-4">
           {[
             'Você finaliza a compra com segurança pela Kiwify (Pix, cartão ou boleto).',
-            'Após a confirmação do pagamento, você recebe por e-mail as instruções para acessar o Kit.',
-            'Faça o download dos 7 materiais em PDF e comece a usar imediatamente.',
+            'Após a confirmação do pagamento, você recebe imediatamente o acesso por e-mail.',
+            'Acesse os três materiais (workbook em PDF, apresentação visual e vídeo introdutório) diretamente na área de membros da Kiwify.',
           ].map((step, i) => (
             <div
               key={i}
-              className="flex items-center gap-5 bg-card border border-border rounded-xl px-6 py-4"
+              className="flex items-center gap-5 bg-card border border-border rounded-xl px-6 py-4 shadow-subtle"
             >
               <span className="flex-shrink-0 w-9 h-9 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
                 {i + 1}
@@ -177,15 +235,16 @@ export default function KitPage() {
           ))}
         </div>
         <p className="text-center text-sm text-muted-foreground max-w-[500px] mx-auto">
-          O acesso é enviado após a confirmação do pagamento. Pagamentos via Pix costumam ser
-          confirmados em minutos; boleto pode levar até 2 dias úteis.
+          O comprador acessa os três materiais pela área de membros da Kiwify depois da confirmação
+          do pagamento.
         </p>
       </section>
 
       <section className="max-w-[800px] mx-auto text-center space-y-4 animate-fade-in-up">
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-          Pare de tentar guardar tudo na cabeça. O Kit Organização Inteligente reúne os principais
-          modelos que você precisa para transformar pendências soltas em um plano claro de ação.
+          Pare de tentar guardar tudo na cabeça. O Kit Organização Inteligente reúne tudo o que você
+          precisa em um workbook completo, acompanhado de apresentação visual e vídeo introdutório
+          para você transformar pendências em um plano claro de ação.
         </p>
       </section>
 
@@ -211,25 +270,44 @@ export default function KitPage() {
 
       <section className="bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-20 rounded-[32px] space-y-10">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">O que vem no kit</h2>
-          <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">
-            Sete modelos práticos que cobrem toda a sua rotina de organização.
+          <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
+            Conteúdo do Workbook (26 páginas)
+          </span>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Os 7 modelos reunidos dentro do workbook
+          </h2>
+          <p className="text-muted-foreground text-lg max-w-[650px] mx-auto">
+            Em vez de arquivos soltos, todos os sete modelos estão organizados e integrados dentro
+            do workbook premium em PDF para facilitar sua aplicação:
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-[1000px] mx-auto">
-          {kitContents.map((item) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[1000px] mx-auto">
+          {workbookModels.map((item) => (
             <Card
-              key={item.label}
-              className="bg-background border-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-medium"
+              key={item.name}
+              className="bg-background border-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-medium"
             >
-              <CardHeader className="flex flex-row items-center gap-4 p-6">
-                <div className="w-11 h-11 bg-primary/10 text-primary rounded-xl flex items-center justify-center flex-shrink-0">
+              <CardHeader className="p-5 space-y-3">
+                <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center flex-shrink-0">
                   <item.icon className="h-5 w-5" />
                 </div>
-                <CardTitle className="text-base font-semibold leading-snug">{item.label}</CardTitle>
+                <div>
+                  <CardTitle className="text-base font-semibold leading-snug">
+                    {item.name}
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
+                </div>
               </CardHeader>
             </Card>
           ))}
+        </div>
+        <div className="max-w-[700px] mx-auto bg-card border border-border rounded-xl p-5 text-center text-sm text-muted-foreground">
+          <p className="font-medium text-foreground mb-1">
+            Reunidos em um único PDF premium de 26 páginas
+          </p>
+          Você encontra: planner semanal, checklist da vida organizada, controle de hábitos,
+          controle de documentos e prazos, mapa de prioridades, revisão semanal e plano de
+          implantação em 14 dias.
         </div>
       </section>
 
