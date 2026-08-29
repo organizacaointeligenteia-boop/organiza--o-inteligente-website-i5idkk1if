@@ -1,9 +1,15 @@
 routerAdd('POST', '/backend/v1/diagnosis/subscribe', (e) => {
-  // Parse body — it arrives as a raw string from fetch(JSON.stringify(...))
+  // Parse body — handle string or object safely
   let body = {}
   try {
-    const raw = e.requestInfo().body || '{}'
-    body = typeof raw === 'string' ? JSON.parse(raw) : raw
+    const raw = e.requestInfo().body
+    if (typeof raw === 'string') {
+      body = raw.trim().length > 0 ? JSON.parse(raw) : {}
+    } else if (raw && typeof raw === 'object') {
+      body = raw
+    } else {
+      body = {}
+    }
   } catch (_) {
     body = {}
   }

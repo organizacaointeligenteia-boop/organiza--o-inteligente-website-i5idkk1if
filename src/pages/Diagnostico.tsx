@@ -233,8 +233,26 @@ export default function Diagnostico() {
         },
         body: JSON.stringify({ email, name, consent: 'granted' }),
       })
+
+      const contentType = res.headers.get('content-type') || ''
+      if (!res.ok) {
+        if (contentType.includes('application/json')) {
+          const errData = await res.json().catch(() => null)
+          throw new Error(
+            errData?.message ||
+              errData?.data?.message ||
+              'Não foi possível concluir a inscrição. Verifique os dados e tente novamente.',
+          )
+        }
+        throw new Error('Serviço temporariamente indisponível. Tente novamente em instantes.')
+      }
+
+      if (!contentType.includes('application/json')) {
+        throw new Error('Resposta inesperada do servidor. Tente novamente em instantes.')
+      }
+
       const data = await res.json()
-      if (data?.success && data?.consentReceived) {
+      if (data?.success === true && data?.consentReceived === true) {
         setSubscribed(true)
         toast({
           title: 'Tudo pronto!',
@@ -244,15 +262,13 @@ export default function Diagnostico() {
         form.reset()
         setConsent(false)
       } else {
-        throw new Error(data?.message || 'Erro ao processar')
+        throw new Error(data?.message || 'Não foi possível confirmar a inscrição.')
       }
     } catch (err: any) {
       toast({
         title: 'Erro na inscrição',
         description:
-          err?.response?.message ||
-          err?.message ||
-          'Serviço indisponível no momento. Tente novamente em instantes.',
+          err?.message || 'Serviço indisponível no momento. Tente novamente em instantes.',
         variant: 'destructive',
       })
     } finally {
@@ -379,8 +395,7 @@ export default function Diagnostico() {
                     Kit Organização Inteligente
                   </p>
                   <p className="text-muted-foreground leading-relaxed">
-                    Sete PDFs práticos para organizar rotina, prioridades, hábitos e documentos sem
-                    começar do zero.
+                    Workbook de 26 páginas, apresentação visual e vídeo introdutório.
                   </p>
                 </div>
               </div>
