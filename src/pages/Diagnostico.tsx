@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useToast } from '@/hooks/use-toast'
+import pb from '@/lib/pocketbase/client'
 import { ArrowLeft, ArrowRight, CalendarDays, FileText, ListChecks, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -225,33 +226,12 @@ export default function Diagnostico() {
 
     setSubmitting(true)
     try {
-      const res = await fetch('/backend/v1/diagnosis/subscribe', {
+      const data = await pb.send('/backend/v1/diagnosis/subscribe', {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ email, name, consent: 'granted' }),
+        headers: { 'Content-Type': 'application/json' },
       })
 
-      const contentType = res.headers.get('content-type') || ''
-      if (!res.ok) {
-        if (contentType.includes('application/json')) {
-          const errData = await res.json().catch(() => null)
-          throw new Error(
-            errData?.message ||
-              errData?.data?.message ||
-              'Não foi possível concluir a inscrição. Verifique os dados e tente novamente.',
-          )
-        }
-        throw new Error('Serviço temporariamente indisponível. Tente novamente em instantes.')
-      }
-
-      if (!contentType.includes('application/json')) {
-        throw new Error('Resposta inesperada do servidor. Tente novamente em instantes.')
-      }
-
-      const data = await res.json()
       if (data?.success === true && data?.consentReceived === true) {
         setSubscribed(true)
         toast({
@@ -268,7 +248,10 @@ export default function Diagnostico() {
       toast({
         title: 'Erro na inscrição',
         description:
-          err?.message || 'Serviço indisponível no momento. Tente novamente em instantes.',
+          err?.response?.message ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Serviço indisponível no momento. Tente novamente em instantes.',
         variant: 'destructive',
       })
     } finally {
