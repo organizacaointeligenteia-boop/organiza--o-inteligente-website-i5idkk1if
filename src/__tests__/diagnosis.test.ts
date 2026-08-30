@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 
 describe('diagnosis backend hook logic', () => {
   it('validates consent properly', () => {
@@ -18,6 +18,7 @@ describe('diagnosis backend hook logic', () => {
     const sentinel = 'diagnostic-check@invalid.local'
     let dbSaved = false
     let rdSent = false
+    let dispatchedPayload: any = null
 
     const handleSubscribe = (body: { email: string; name?: string; consent: any }) => {
       const consented =
@@ -29,6 +30,19 @@ describe('diagnosis backend hook logic', () => {
       }
 
       dbSaved = true
+      dispatchedPayload = {
+        event_type: 'CONVERSION',
+        event_family: 'CDP',
+        payload: {
+          conversion_identifier: 'OI - Diagnóstico concluído',
+          email: body.email,
+          name: body.name || '',
+          traffic_source: 'organizacao_inteligente',
+          traffic_medium: 'diagnostico_site',
+          tags: ['organizacao-inteligente'],
+          legal_bases: [{ category: 'communications', type: 'consent', status: 'granted' }],
+        },
+      }
       rdSent = true
       return { status: 200, json: { success: true, consentReceived: true } }
     }
@@ -45,5 +59,46 @@ describe('diagnosis backend hook logic', () => {
     expect(res.json.dryRun).toBe(true)
     expect(dbSaved).toBe(false)
     expect(rdSent).toBe(false)
+    expect(dispatchedPayload).toBeNull()
+  })
+
+  it('builds exact RD Station conversion payload for diagnosis subscription', () => {
+    const buildRdPayload = (email: string, name: string) => ({
+      event_type: 'CONVERSION',
+      event_family: 'CDP',
+      payload: {
+        conversion_identifier: 'OI - Diagnóstico concluído',
+        email,
+        name,
+        traffic_source: 'organizacao_inteligente',
+        traffic_medium: 'diagnostico_site',
+        tags: ['organizacao-inteligente'],
+        legal_bases: [{ category: 'communications', type: 'consent', status: 'granted' }],
+      },
+    })
+
+    const payload = buildRdPayload('lead@example.com', 'Nome do Lead')
+
+    expect(payload).toEqual({
+      event_type: 'CONVERSION',
+      event_family: 'CDP',
+      payload: {
+        conversion_identifier: 'OI - Diagnóstico concluído',
+        email: 'lead@example.com',
+        name: 'Nome do Lead',
+        traffic_source: 'organizacao_inteligente',
+        traffic_medium: 'diagnostico_site',
+        tags: ['organizacao-inteligente'],
+        legal_bases: [{ category: 'communications', type: 'consent', status: 'granted' }],
+      },
+    })
+
+    expect(payload.payload.conversion_identifier).toBe('OI - Diagnóstico concluído')
+    expect(payload.payload.traffic_source).toBe('organizacao_inteligente')
+    expect(payload.payload.traffic_medium).toBe('diagnostico_site')
+    expect(payload.payload.tags).toEqual(['organizacao-inteligente'])
+    expect(payload.payload.legal_bases).toEqual([
+      { category: 'communications', type: 'consent', status: 'granted' },
+    ])
   })
 })
