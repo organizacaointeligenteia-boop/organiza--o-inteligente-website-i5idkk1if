@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useToast } from '@/hooks/use-toast'
+import { getKiwifyCheckoutUrl } from '@/lib/utm'
 import pb from '@/lib/pocketbase/client'
 import { ArrowLeft, ArrowRight, CalendarDays, FileText, ListChecks, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -384,7 +385,7 @@ export default function Diagnostico() {
               </div>
               <Button asChild className="w-full gap-2">
                 <a
-                  href="https://pay.kiwify.com.br/qpFPGxF"
+                  href={getKiwifyCheckoutUrl('diagnostico_resultado')}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

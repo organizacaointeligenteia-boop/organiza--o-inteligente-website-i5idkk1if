@@ -25,8 +25,7 @@ import {
   Check,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-
-const KIWIFY_CHECKOUT_URL = 'https://pay.kiwify.com.br/qpFPGxF'
+import { getKiwifyCheckoutUrl } from '@/lib/utm'
 
 const targetAudience = [
   'Para quem sente que a semana começa bagunçada.',
@@ -169,7 +168,11 @@ export default function KitPage() {
               size="lg"
               className="bg-white text-primary hover:bg-white/90 font-semibold text-base px-8"
             >
-              <a href={KIWIFY_CHECKOUT_URL} target="_blank" rel="noopener noreferrer">
+              <a
+                href={getKiwifyCheckoutUrl('pagina_kit')}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 Quero organizar minha rotina agora
               </a>
             </Button>
@@ -382,7 +385,7 @@ export default function KitPage() {
           </p>
         </div>
         <Button asChild size="lg" className="w-full sm:w-auto text-base font-semibold px-8 py-6">
-          <a href={KIWIFY_CHECKOUT_URL} target="_blank" rel="noopener noreferrer">
+          <a href={getKiwifyCheckoutUrl('pagina_kit')} target="_blank" rel="noopener noreferrer">
             Quero organizar minha rotina agora
           </a>
         </Button>
@@ -423,7 +426,7 @@ export default function KitPage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
           <Button asChild size="lg" className="font-semibold px-8">
-            <a href={KIWIFY_CHECKOUT_URL} target="_blank" rel="noopener noreferrer">
+            <a href={getKiwifyCheckoutUrl('pagina_kit')} target="_blank" rel="noopener noreferrer">
               Quero organizar minha rotina agora
             </a>
           </Button>
