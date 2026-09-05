@@ -33,6 +33,32 @@ describe('Preview 0.0.51 Specific Requirements', () => {
     })
   })
 
+  describe('Header & Navigation: Layout Defect Fixes (v0.0.52)', () => {
+    const headerSource = readFileSync(resolve(__dirname, '../components/Header.tsx'), 'utf-8')
+    const sidebarSource = readFileSync(resolve(__dirname, '../components/AppSidebar.tsx'), 'utf-8')
+
+    it('Header contém apenas botão de menu, marca e botão de alternar tema (sem navegação horizontal duplicada)', () => {
+      expect(headerSource).not.toContain('<nav')
+      expect(headerSource).not.toContain('aria-label="Navegação principal"')
+      expect(headerSource).not.toContain('desktopLinks')
+      expect(headerSource).toContain('SidebarTrigger')
+      expect(headerSource).toContain('Organização Inteligente')
+      expect(headerSource).toContain('Alternar tema')
+    })
+
+    it('marca no Header não usa classe de truncamento e tem whitespace-nowrap', () => {
+      expect(headerSource).not.toMatch(/className="[^"]*truncate[^"]*"/)
+      expect(headerSource).toContain('whitespace-nowrap')
+    })
+
+    it('todos os links principais de navegação continuam preservados e exportados para a AppSidebar', () => {
+      expect(headerSource).toContain('export const navLinks')
+      expect(sidebarSource).toContain("import { navLinks } from './Header'")
+      expect(sidebarSource).toContain('tabIndex={0}')
+      expect(sidebarSource).toContain('focus-visible:ring-2')
+    })
+  })
+
   describe('Diagnostico: CTA Conhecer o Kit', () => {
     it('aponta Link interno para /kit-organizacao-inteligente em vez de checkout direto', () => {
       expect(diagnosticoSource).toContain('to="/kit-organizacao-inteligente"')
