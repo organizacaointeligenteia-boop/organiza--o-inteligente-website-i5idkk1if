@@ -8,6 +8,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { navLinks } from './Header'
 import {
@@ -36,6 +37,14 @@ const iconMap: Record<string, React.ElementType> = {
 }
 
 export function AppSidebar() {
+  const { isMobile, setOpenMobile } = useSidebar()
+
+  const handleNavClick = () => {
+    if (isMobile) {
+      setOpenMobile(false)
+    }
+  }
+
   return (
     <Sidebar collapsible="offcanvas" className="border-r border-border bg-secondary">
       <SidebarContent className="bg-secondary">
@@ -53,6 +62,7 @@ export function AppSidebar() {
                       <NavLink
                         to={item.to}
                         tabIndex={0}
+                        onClick={handleNavClick}
                         className={({ isActive }) =>
                           cn(
                             'flex items-center gap-3 min-h-[44px] rounded-lg mx-2 px-3 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
@@ -85,6 +95,7 @@ export function AppSidebar() {
                     <NavLink
                       to={`/blog?cat=${encodeURIComponent(cat)}`}
                       tabIndex={0}
+                      onClick={handleNavClick}
                       className="flex items-center gap-3 min-h-[44px] rounded-lg mx-2 px-3 transition-colors duration-200 text-muted-foreground hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <span className="text-[15px]">{cat}</span>

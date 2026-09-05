@@ -200,6 +200,15 @@ const Sidebar = React.forwardRef<
               } as React.CSSProperties
             }
             side={side}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault()
+              const trigger = document.querySelector<HTMLElement>(
+                'button[data-sidebar="trigger"], [data-sidebar="trigger"]',
+              )
+              if (trigger) {
+                trigger.focus({ preventScroll: true })
+              }
+            }}
           >
             <SheetHeader className="p-4 border-b border-sidebar-border">
               <SheetTitle className="text-left text-base font-semibold text-sidebar-foreground">
