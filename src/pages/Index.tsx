@@ -1,15 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useToast } from '@/hooks/use-toast'
 import { getArticles, type Article } from '@/services/articles'
 import { getDownloads, type Download, trackDownload } from '@/services/downloads'
-import pb from '@/lib/pocketbase/client'
 import {
   findFreeDownloadFile,
   getDownloadUrl,
@@ -31,7 +29,6 @@ import {
   ClipboardList,
   CalendarDays,
   FileText,
-  Wallet,
   RefreshCw,
 } from 'lucide-react'
 
@@ -47,7 +44,6 @@ export default function Index() {
   const [articles, setArticles] = useState<Article[]>([])
   const [tools, setTools] = useState<Download[]>([])
   const [loading, setLoading] = useState(true)
-  const newsletterEmailRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -90,55 +86,12 @@ export default function Index() {
     }
   }, [downloadUrls])
 
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const formData = new FormData(e.target as HTMLFormElement)
-    try {
-      const res = await pb.send('/backend/v1/newsletter/subscribe', {
-        method: 'POST',
-        body: JSON.stringify({ email: formData.get('email'), name: formData.get('name') }),
-        headers: { 'Content-Type': 'application/json' },
-      })
-      if (res?.success) {
-        toast({
-          title: 'Tudo pronto!',
-          description: 'Inscrição realizada com sucesso',
-          className: 'bg-green-600 text-white border-none',
-        })
-        ;(e.target as HTMLFormElement).reset()
-      } else {
-        // Backend responded but reported failure — show a clear error so the
-        // user can retry instead of silently faking success.
-        throw new Error(res?.message || 'Não foi possível concluir a inscrição. Tente novamente.')
-      }
-    } catch (err: any) {
-      toast({
-        title: 'Erro na inscrição',
-        description:
-          err?.response?.message ||
-          err?.message ||
-          'Serviço indisponível no momento. Tente novamente em instantes.',
-        variant: 'destructive',
-      })
-    }
-  }
-
   const handleDownload = (tool: Download) => {
     toast({
       title: 'Download iniciado',
-      description: 'Cadastre seu e-mail para receber novas ferramentas.',
-      action: (
-        <ToastAction altText="Inscrever na newsletter" onClick={scrollToNewsletter}>
-          Quero receber
-        </ToastAction>
-      ),
+      description: 'Aproveite seu material gratuito.',
     })
     trackDownload(tool.id).catch(() => {})
-  }
-
-  const scrollToNewsletter = () => {
-    document.getElementById('newsletter')?.scrollIntoView({ behavior: 'smooth' })
-    setTimeout(() => newsletterEmailRef.current?.focus(), 600)
   }
 
   const valueCards = [
@@ -164,9 +117,9 @@ export default function Index() {
 
   const kitItems = [
     { icon: CalendarDays, label: 'Planner semanal' },
-    { icon: ClipboardList, label: 'Checklist de documentos' },
-    { icon: Wallet, label: 'Mapa financeiro' },
-    { icon: RefreshCw, label: 'Revisão de domingo' },
+    { icon: ClipboardList, label: 'Checklist da vida organizada' },
+    { icon: RefreshCw, label: 'Controle de hábitos' },
+    { icon: FileText, label: 'Controle de documentos e prazos' },
   ]
 
   return (
@@ -307,11 +260,12 @@ export default function Index() {
         </div>
       </section>
 
-      <section className="space-y-10 bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-20 rounded-[32px]">
+      <section className="space-y-10 bg-secondary px-6 md:px-10 py-16 md:py-20 rounded-[32px]">
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <h2 className="text-3xl md:text-4xl font-bold">Ferramentas Gratuitas</h2>
           <p className="text-muted-foreground text-lg">
-            Baixe checklists, planners e modelos para aplicar o método imediatamente.
+            Baixe checklists, planners e modelos gratuitos para organizar tarefas, hábitos e
+            rotinas.
           </p>
         </div>
 
@@ -357,12 +311,10 @@ export default function Index() {
                         {file ? getDownloadLabel(file) : 'Baixar PDF'}
                       </a>
                     ) : (
-                      <Button
-                        variant="default"
-                        className="w-full gap-2 font-semibold"
-                        onClick={scrollToNewsletter}
-                      >
-                        <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
+                      <Button variant="default" className="w-full gap-2 font-semibold" asChild>
+                        <Link to="/ferramentas-gratuitas">
+                          <DownloadIcon className="h-[18px] w-[18px]" /> Baixar PDF
+                        </Link>
                       </Button>
                     )}
                   </CardFooter>
@@ -390,8 +342,10 @@ export default function Index() {
             Kit Organização Inteligente
           </h2>
           <p className="text-lg text-primary-foreground/90 leading-relaxed">
-            Um produto digital prático com 7 materiais para rotina, hábitos, prioridades e
-            documentos — pronto para imprimir ou usar digitalmente.
+            A entrega real do Kit reúne 3 materiais complementares: workbook premium em PDF de 26
+            páginas, apresentação visual e vídeo introdutório. Todos os 7 modelos práticos estão
+            integrados dentro do workbook, acompanhados de um plano de implantação em 14 dias para
+            guiar sua rotina com clareza.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             {kitItems.map((item) => (
@@ -405,6 +359,12 @@ export default function Index() {
               </div>
             ))}
           </div>
+          <p className="text-sm text-primary-foreground/80">
+            Dentro do workbook de 26 páginas: Planner semanal, Checklist da vida organizada,
+            Controle de hábitos, Controle de documentos e prazos, Mapa de prioridades, Revisão
+            semanal e Plano de implantação em 14 dias. A compra direta do Kit não exige diagnóstico
+            nem cadastro prévio.
+          </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Button
               asChild
@@ -425,42 +385,28 @@ export default function Index() {
         </div>
       </section>
 
-      <section id="newsletter" className="py-10 flex justify-center">
+      <section id="diagnostico-convite" className="py-10 flex justify-center">
         <div className="bg-card rounded-[32px] p-8 md:p-16 max-w-[900px] text-center space-y-6 w-full shadow-elevation border border-border relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-accent"></div>
+          <span className="inline-block bg-primary/10 text-primary border border-primary/20 px-4 py-1.5 rounded-full text-sm font-medium">
+            Opcional · 2 minutos
+          </span>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Receba o Checklist da Vida Organizada
+            Descubra qual ponto trava sua organização
           </h2>
-          <p className="text-muted-foreground text-lg max-w-[600px] mx-auto">
-            Entre na lista para receber materiais práticos sobre rotina, foco, documentos, finanças
-            pessoais e planejamento semanal.
+          <p className="text-muted-foreground text-lg max-w-[600px] mx-auto leading-relaxed">
+            Faça um diagnóstico rápido de 5 perguntas para identificar se o seu maior gargalo é
+            rotina, prioridades, foco ou documentos. O diagnóstico é 100% gratuito e totalmente
+            opcional — você pode explorar o site ou adquirir o Kit diretamente a qualquer momento.
           </p>
-          <form
-            onSubmit={handleSubscribe}
-            className="flex flex-col sm:flex-row gap-3 max-w-[550px] mx-auto pt-6"
-          >
-            <Input
-              name="name"
-              type="text"
-              placeholder="Seu nome (opcional)"
-              className="bg-background flex-1 shadow-sm"
-            />
-            <Input
-              name="email"
-              type="email"
-              placeholder="E-mail principal"
-              required
-              className="bg-background flex-1 shadow-sm"
-              ref={newsletterEmailRef}
-            />
-            <Button
-              type="submit"
-              size="lg"
-              className="whitespace-nowrap w-full sm:w-auto shadow-sm"
-            >
-              Quero receber
+          <div className="pt-4 flex flex-col sm:flex-row justify-center gap-4">
+            <Button asChild size="lg" className="font-semibold">
+              <Link to="/diagnostico">Fazer diagnóstico gratuito</Link>
             </Button>
-          </form>
+            <Button asChild variant="outline" size="lg" className="border-primary text-primary">
+              <Link to="/ferramentas-gratuitas">Ver ferramentas gratuitas</Link>
+            </Button>
+          </div>
         </div>
       </section>
     </div>

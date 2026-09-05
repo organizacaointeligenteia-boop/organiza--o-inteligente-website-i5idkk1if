@@ -1,40 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { useToast } from '@/hooks/use-toast'
-import pb from '@/lib/pocketbase/client'
 import { navLinks } from './Header'
-import { Instagram, Linkedin, Twitter } from 'lucide-react'
+import { Instagram } from 'lucide-react'
 
 export function Footer() {
-  const { toast } = useToast()
-
-  const handleSubscribe = async (e: React.FormEvent) => {
-    e.preventDefault()
-    const formData = new FormData(e.target as HTMLFormElement)
-    try {
-      const res = await pb.send('/backend/v1/newsletter/subscribe', {
-        method: 'POST',
-        body: JSON.stringify({ email: formData.get('email') }),
-        headers: { 'Content-Type': 'application/json' },
-      })
-      if (res.success) {
-        toast({
-          title: 'Inscrição realizada!',
-          description: res.message,
-          className: 'bg-green-600 text-white border-none',
-        })
-        ;(e.target as HTMLFormElement).reset()
-      }
-    } catch (err: any) {
-      toast({
-        title: 'Erro',
-        description: err.response?.message || 'Ocorreu um erro',
-        variant: 'destructive',
-      })
-    }
-  }
-
   return (
     <footer className="bg-secondary text-secondary-foreground mt-auto border-t">
       <div className="w-full max-w-[1200px] mx-auto px-6 py-16">
@@ -104,48 +73,24 @@ export function Footer() {
                 href="https://www.instagram.com/organizacao.inteligente.ia/"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Instagram"
+                aria-label="Instagram @organizacao.inteligente.ia"
                 className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
               >
                 <Instagram className="h-5 w-5" />
               </a>
-              <a
-                href="https://x.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Twitter"
-                className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
-              >
-                <Twitter className="h-5 w-5" />
-              </a>
-              <a
-                href="https://linkedin.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn"
-                className="text-muted-foreground hover:text-primary min-w-[44px] min-h-[44px] inline-flex items-center justify-center bg-background rounded-full shadow-sm"
-              >
-                <Linkedin className="h-5 w-5" />
-              </a>
             </div>
           </div>
           <div className="md:col-span-1">
-            <h4 className="font-semibold mb-6 text-foreground tracking-wide">Checklist gratuito</h4>
+            <h4 className="font-semibold mb-6 text-foreground tracking-wide">
+              Diagnóstico gratuito
+            </h4>
             <p className="text-[15px] text-muted-foreground mb-4 leading-relaxed">
-              Receba materiais práticos para organizar sua semana e reduzir pendências.
+              Descubra em 2 minutos qual ponto está travando sua rotina. O diagnóstico é gratuito e
+              100% opcional.
             </p>
-            <form onSubmit={handleSubscribe} className="flex flex-col gap-3">
-              <Input
-                name="email"
-                type="email"
-                placeholder="Seu melhor e-mail"
-                required
-                className="bg-background border-border focus-visible:ring-primary shadow-sm"
-              />
-              <Button type="submit" className="w-full shadow-sm">
-                Quero receber
-              </Button>
-            </form>
+            <Button asChild className="w-full shadow-sm">
+              <Link to="/diagnostico">Fazer diagnóstico gratuito</Link>
+            </Button>
           </div>
         </div>
         <div className="border-t border-border mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-muted-foreground">

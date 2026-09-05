@@ -42,7 +42,7 @@ const mainDeliverables = [
     title: 'Workbook Premium em PDF',
     badge: '26 páginas',
     description:
-      'Material principal completo com método passo a passo e todos os 7 modelos práticos integrados para você preencher digitalmente ou imprimir.',
+      'Material principal completo com método passo a passo e todos os 7 modelos práticos integrados, pronto para imprimir ou usar aplicativo de anotação compatível.',
   },
   {
     icon: Presentation,
@@ -56,7 +56,7 @@ const mainDeliverables = [
     title: 'Vídeo Introdutório',
     badge: 'Boas-vindas e orientações',
     description:
-      'Instruções diretas ao ponto sobre como navegar pelos materiais e começar a aplicar o sistema imediatamente na sua rotina.',
+      'Orientações diretas ao ponto sobre como navegar pelos materiais e começar a aplicar o sistema na sua rotina com clareza.',
   },
 ]
 
@@ -108,34 +108,39 @@ const benefits = [
 ]
 
 const steps = [
+  'Conclua seu pedido na página segura de pagamento da Kiwify.',
+  'Aguarde a confirmação do pagamento e confira seu e-mail com os dados de acesso.',
   'Acesse a área de membros da Kiwify.',
   'Assista ao vídeo introdutório e consulte a apresentação visual.',
-  'Abra o workbook premium em PDF (26 páginas).',
-  'Siga o plano de implantação em 14 dias.',
-  'Preencha os modelos digitalmente ou imprima os que preferir.',
-  'Faça a revisão semanal toda semana.',
+  'Abra o workbook premium em PDF (26 páginas com os 7 modelos integrados).',
+  'Siga o plano de implantação em 14 dias: você pode imprimir ou usar aplicativo de anotação compatível.',
 ]
 
 const faqItems = [
   {
-    question: 'Preciso imprimir?',
+    question: 'Como funciona o formato do material? Preciso imprimir?',
     answer:
-      'Não. O kit funciona tanto impresso quanto em formato digital. Você pode usar no computador, tablet ou celular — escolha o que funciona melhor para você.',
+      'O workbook vem em formato PDF com 26 páginas. Você pode imprimir as páginas que desejar ou usar aplicativo de anotação compatível no tablet, celular ou computador (o material não possui campos preenchíveis automáticos).',
   },
   {
     question: 'Serve para trabalho e vida pessoal?',
     answer:
-      'Sim. O Kit Organização Inteligente foi desenhado para cobrir tanto a rotina profissional quanto a pessoal, ajudando a organizar tarefas, documentos, hábitos e prioridades em um só lugar.',
+      'Sim. O Kit Organização Inteligente foi desenhado para apoiar a organização tanto da rotina profissional quanto da pessoal, auxiliando no registro de tarefas, prazos, hábitos e prioridades.',
   },
   {
-    question: 'É um curso?',
+    question: 'É um curso em vídeo longo?',
     answer:
-      'Não é um curso longo. É um kit prático e guiado, composto por workbook em PDF, apresentação visual e vídeo introdutório, feito para ser aplicado em 14 dias.',
+      'Não. É um kit prático composto por 3 materiais complementares: o workbook em PDF (26 páginas), uma apresentação visual e um vídeo introdutório com instruções essenciais para guiar a aplicação do plano em 14 dias.',
   },
   {
-    question: 'Como e quando recebo o acesso?',
+    question: 'Como e quando recebo o acesso ao Kit?',
     answer:
-      'Assim que o pagamento for confirmado, você recebe por e-mail os dados para entrar na área de membros da Kiwify e acessar imediatamente o workbook premium em PDF, a apresentação visual e o vídeo introdutório.',
+      'O acesso é liberado pela área de membros da Kiwify após a confirmação do pagamento. Você receberá um e-mail com as instruções de entrada — basta conferir a caixa de entrada (e pasta de spam) do endereço informado na compra.',
+  },
+  {
+    question: 'O Kit garante resultados na minha organização?',
+    answer:
+      'O material fornece uma estrutura prática, modelos e um plano de 14 dias para guiar sua rotina. A implementação e o aproveitamento dependem da sua dedicação e constância pessoal — não há promessa de resultado garantido.',
   },
 ]
 
@@ -144,7 +149,7 @@ export default function KitPage() {
   usePageMeta({
     path: '/kit-organizacao-inteligente',
     description:
-      'Organize sua semana, seus documentos, seus hábitos e suas prioridades com um sistema simples, pronto para imprimir ou usar digitalmente.',
+      'Organize sua semana, seus documentos, seus hábitos e suas prioridades com um sistema prático de 3 materiais, pronto para imprimir ou usar aplicativo de anotação compatível.',
   })
 
   return (
@@ -153,32 +158,39 @@ export default function KitPage() {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent pointer-events-none" />
         <div className="relative z-10 flex flex-col items-center justify-center max-w-[800px] mx-auto space-y-6">
           <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md text-white border border-white/20 px-4 py-2 rounded-full text-sm font-medium animate-fade-in-up">
-            <Sparkles className="h-4 w-4" /> Sistema completo de organização
+            <Sparkles className="h-4 w-4" /> Kit prático de organização
           </span>
           <h1 className="text-[40px] md:text-[56px] font-bold tracking-tight text-white leading-[1.1] animate-fade-in-up">
             Kit Organização Inteligente
           </h1>
           <p className="text-[18px] md:text-[22px] text-primary-foreground/90 max-w-[650px] leading-relaxed animate-fade-in-up">
-            Organize sua semana, seus documentos, seus hábitos e suas prioridades com um sistema
-            simples, pronto para imprimir ou usar digitalmente.
+            Organize sua semana, seus documentos, seus hábitos e suas prioridades. 3 materiais
+            complementares, prontos para imprimir ou usar aplicativo de anotação compatível.
           </p>
-          <div className="pt-4 animate-fade-in-up">
+          <div className="pt-4 flex flex-col items-center gap-3 animate-fade-in-up">
+            <span className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
+              R$ 29,90 à vista
+            </span>
             <Button
               asChild
               size="lg"
-              className="bg-white text-primary hover:bg-white/90 font-semibold text-base px-8"
+              className="bg-white text-primary hover:bg-white/90 font-semibold text-base px-8 py-6 shadow-medium"
             >
               <a
                 href={getKiwifyCheckoutUrl('pagina_kit')}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                Quero organizar minha rotina agora
+                Comprar o Kit
               </a>
             </Button>
           </div>
-          <p className="text-sm text-white/80 animate-fade-in-up pt-2">
-            Pagamento seguro pela Kiwify • Pix, cartão ou boleto • Garantia de 7 dias
+          <p className="text-sm text-white/80 animate-fade-in-up pt-1">
+            R$ 29,90 à vista • Pagamento seguro pela Kiwify • Pix, cartão ou boleto • Garantia de 7
+            dias
+          </p>
+          <p className="text-xs text-white/70">
+            Acesso pela área de membros da Kiwify após confirmação do pagamento (conferir e-mail).
           </p>
         </div>
       </section>
@@ -212,9 +224,11 @@ export default function KitPage() {
         </div>
       </section>
 
-      <section className="bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-20 rounded-[32px] space-y-10">
+      <section className="bg-secondary px-6 md:px-10 py-16 md:py-20 rounded-[32px] space-y-10">
         <div className="text-center space-y-4">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Como você recebe</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Como você recebe o acesso
+          </h2>
           <p className="text-muted-foreground text-lg max-w-[650px] mx-auto">
             O comprador acessa os três materiais pela área de membros da Kiwify depois da
             confirmação do pagamento.
@@ -222,9 +236,9 @@ export default function KitPage() {
         </div>
         <div className="max-w-[700px] mx-auto space-y-4">
           {[
-            'Você finaliza a compra com segurança pela Kiwify (Pix, cartão ou boleto).',
-            'Após a confirmação do pagamento, você recebe imediatamente o acesso por e-mail.',
-            'Acesse os três materiais (workbook em PDF, apresentação visual e vídeo introdutório) diretamente na área de membros da Kiwify.',
+            'Você finaliza o pedido com segurança pela Kiwify no valor de R$ 29,90 à vista (Pix, cartão ou boleto).',
+            'Após a confirmação do pagamento, as instruções e dados de login são enviados para o seu e-mail cadastrado (lembre-se de conferir sua caixa de entrada e spam).',
+            'Acesse os três materiais (workbook em PDF de 26 páginas, apresentação visual e vídeo introdutório) diretamente na área de membros da Kiwify.',
           ].map((step, i) => (
             <div
               key={i}
@@ -237,9 +251,9 @@ export default function KitPage() {
             </div>
           ))}
         </div>
-        <p className="text-center text-sm text-muted-foreground max-w-[500px] mx-auto">
-          O comprador acessa os três materiais pela área de membros da Kiwify depois da confirmação
-          do pagamento.
+        <p className="text-center text-sm text-muted-foreground max-w-[550px] mx-auto">
+          Acesso liberado pela área de membros da Kiwify após confirmação do pagamento. Você pode
+          imprimir ou usar aplicativo de anotação compatível.
         </p>
       </section>
 
@@ -271,7 +285,7 @@ export default function KitPage() {
         </div>
       </section>
 
-      <section className="bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-20 rounded-[32px] space-y-10">
+      <section className="bg-secondary px-6 md:px-10 py-16 md:py-20 rounded-[32px] space-y-10">
         <div className="text-center space-y-4">
           <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
             Conteúdo do Workbook (26 páginas)
@@ -280,8 +294,8 @@ export default function KitPage() {
             Os 7 modelos reunidos dentro do workbook
           </h2>
           <p className="text-muted-foreground text-lg max-w-[650px] mx-auto">
-            Em vez de arquivos soltos, todos os sete modelos estão organizados e integrados dentro
-            do workbook premium em PDF para facilitar sua aplicação:
+            Todos os sete modelos práticos estão organizados e integrados dentro do workbook em PDF
+            de 26 páginas, acompanhados do plano de implantação em 14 dias:
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[1000px] mx-auto">
@@ -310,7 +324,7 @@ export default function KitPage() {
           </p>
           Você encontra: planner semanal, checklist da vida organizada, controle de hábitos,
           controle de documentos e prazos, mapa de prioridades, revisão semanal e plano de
-          implantação em 14 dias.
+          implantação em 14 dias. Pronto para imprimir ou usar aplicativo de anotação compatível.
         </div>
       </section>
 
@@ -373,24 +387,26 @@ export default function KitPage() {
       <section className="max-w-[600px] mx-auto text-center space-y-8 animate-fade-in-up">
         <div className="space-y-3">
           <span className="inline-block text-sm font-semibold text-primary uppercase tracking-wider">
-            Oferta de lançamento
+            Investimento único
           </span>
           <div className="flex items-center justify-center gap-3">
             <span className="text-5xl md:text-6xl font-bold tracking-tight text-primary">
-              R$ 29,90
+              R$ 29,90 à vista
             </span>
           </div>
           <p className="text-muted-foreground text-lg">
-            Acesso a todos os modelos do kit após confirmação do pagamento.
+            Acesso aos 3 materiais do Kit pela área de membros da Kiwify após confirmação do
+            pagamento.
           </p>
         </div>
         <Button asChild size="lg" className="w-full sm:w-auto text-base font-semibold px-8 py-6">
           <a href={getKiwifyCheckoutUrl('pagina_kit')} target="_blank" rel="noopener noreferrer">
-            Quero organizar minha rotina agora
+            Comprar o Kit
           </a>
         </Button>
         <p className="text-sm text-muted-foreground">
-          Pagamento via Pix, cartão ou boleto. Acesso enviado por e-mail após confirmação.
+          R$ 29,90 à vista via Pix, cartão ou boleto. Acesso pela área de membros da Kiwify após
+          confirmação (conferir e-mail).
         </p>
       </section>
 
@@ -416,18 +432,20 @@ export default function KitPage() {
         </Card>
       </section>
 
-      <section className="bg-secondary -mx-4 md:-mx-8 px-4 md:px-8 py-16 rounded-[32px] text-center space-y-6">
+      <section className="bg-secondary px-6 md:px-10 py-14 md:py-16 rounded-[32px] text-center space-y-6">
         <Download className="h-12 w-12 text-primary mx-auto" />
         <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
           Pronto para organizar sua vida?
         </h2>
         <p className="text-muted-foreground text-lg max-w-[500px] mx-auto">
-          Comece hoje mesmo com o Kit Organização Inteligente e transforme pendências em ação.
+          Adquira o Kit Organização Inteligente com os 3 materiais práticos para estruturar sua
+          rotina.
         </p>
+        <p className="text-xl font-bold text-primary">R$ 29,90 à vista</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
           <Button asChild size="lg" className="font-semibold px-8">
             <a href={getKiwifyCheckoutUrl('pagina_kit')} target="_blank" rel="noopener noreferrer">
-              Quero organizar minha rotina agora
+              Comprar o Kit
             </a>
           </Button>
           <Button asChild variant="outline" size="lg" className="border-primary text-primary">
@@ -437,7 +455,8 @@ export default function KitPage() {
           </Button>
         </div>
         <p className="text-sm text-muted-foreground pt-2">
-          Pagamento seguro pela Kiwify • Pix, cartão ou boleto • Garantia de 7 dias
+          R$ 29,90 à vista • Pagamento seguro pela Kiwify • Garantia de 7 dias • Acesso pela área de
+          membros após confirmação do pagamento (conferir e-mail).
         </p>
       </section>
     </div>

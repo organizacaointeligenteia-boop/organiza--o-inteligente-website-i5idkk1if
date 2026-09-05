@@ -52,16 +52,17 @@ export function AppSidebar() {
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.to}
+                        tabIndex={0}
                         className={({ isActive }) =>
                           cn(
-                            'flex items-center gap-3 min-h-[44px] rounded-lg mx-2 px-3 transition-colors duration-200',
+                            'flex items-center gap-3 min-h-[44px] rounded-lg mx-2 px-3 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
                             isActive
                               ? 'text-primary font-medium bg-primary/15'
                               : 'text-muted-foreground hover:bg-primary/10 hover:text-primary',
                           )
                         }
                       >
-                        <Icon className="h-5 w-5" />
+                        <Icon className="h-5 w-5 flex-shrink-0" />
                         <span className="text-[15px]">{item.label}</span>
                       </NavLink>
                     </SidebarMenuButton>
@@ -83,7 +84,8 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink
                       to={`/blog?cat=${encodeURIComponent(cat)}`}
-                      className="flex items-center gap-3 min-h-[44px] rounded-lg mx-2 px-3 transition-colors duration-200 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                      tabIndex={0}
+                      className="flex items-center gap-3 min-h-[44px] rounded-lg mx-2 px-3 transition-colors duration-200 text-muted-foreground hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
                       <span className="text-[15px]">{cat}</span>
                     </NavLink>

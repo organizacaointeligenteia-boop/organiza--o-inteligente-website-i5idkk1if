@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { useToast } from '@/hooks/use-toast'
-import { getKiwifyCheckoutUrl } from '@/lib/utm'
+import { Link } from 'react-router-dom'
 import pb from '@/lib/pocketbase/client'
 import { ArrowLeft, ArrowRight, CalendarDays, FileText, ListChecks, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -379,18 +379,15 @@ export default function Diagnostico() {
                     Kit Organização Inteligente
                   </p>
                   <p className="text-muted-foreground leading-relaxed">
-                    Workbook de 26 páginas, apresentação visual e vídeo introdutório.
+                    Workbook de 26 páginas, apresentação visual e vídeo introdutório reunindo os 7
+                    modelos práticos.
                   </p>
                 </div>
               </div>
               <Button asChild className="w-full gap-2">
-                <a
-                  href={getKiwifyCheckoutUrl('diagnostico_resultado')}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Quero conhecer o Kit <ArrowRight className="h-4 w-4" />
-                </a>
+                <Link to="/kit-organizacao-inteligente">
+                  Conhecer o Kit <ArrowRight className="h-4 w-4" />
+                </Link>
               </Button>
             </CardContent>
           </Card>
