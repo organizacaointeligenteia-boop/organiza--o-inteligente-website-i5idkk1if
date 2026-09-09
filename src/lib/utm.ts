@@ -128,6 +128,35 @@ export function captureAndPersistUtm(search?: string): UtmParams {
 }
 
 /**
+ * Sanitiza parâmetros UTM para envio a APIs (ex.: POST /backend/v1/diagnosis/subscribe).
+ * Regras:
+ * - Apenas valores string
+ * - Trim de espaços
+ * - Limite máximo de 100 caracteres por valor
+ * - Omitir campos ausentes ou que resultem em string vazia
+ */
+export function sanitizeUtmForSubmission(raw: unknown): UtmParams {
+  if (!raw || typeof raw !== 'object') {
+    return {}
+  }
+
+  const source = raw as Record<string, unknown>
+  const result: UtmParams = {}
+
+  for (const key of ALLOWED_UTM_KEYS) {
+    const val = source[key]
+    if (typeof val === 'string') {
+      const trimmed = val.trim()
+      if (trimmed.length > 0) {
+        result[key] = trimmed.slice(0, 100)
+      }
+    }
+  }
+
+  return result
+}
+
+/**
  * Constrói a URL do checkout Kiwify com as UTMs de atribuição:
  * - Mantém a base configurada (padrão https://pay.kiwify.com.br/qpFPGxF)
  * - Preserva quaisquer query params já existentes na baseUrl

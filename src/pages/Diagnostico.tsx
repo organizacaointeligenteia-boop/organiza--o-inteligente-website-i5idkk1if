@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import pb from '@/lib/pocketbase/client'
 import { ArrowLeft, ArrowRight, CalendarDays, FileText, ListChecks, Target } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { captureAndPersistUtm, sanitizeUtmForSubmission } from '@/lib/utm'
 
 type OptionKey = 'a' | 'b' | 'c' | 'd'
 
@@ -227,9 +228,19 @@ export default function Diagnostico() {
 
     setSubmitting(true)
     try {
+      const storedUtms = captureAndPersistUtm()
+      const sanitizedUtms = sanitizeUtmForSubmission(storedUtms)
+
+      const payload: Record<string, unknown> = {
+        email,
+        name,
+        consent: 'granted',
+        ...sanitizedUtms,
+      }
+
       const data = await pb.send('/backend/v1/diagnosis/subscribe', {
         method: 'POST',
-        body: JSON.stringify({ email, name, consent: 'granted' }),
+        body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json' },
       })
 

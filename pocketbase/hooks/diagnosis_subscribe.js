@@ -42,6 +42,26 @@ routerAdd('POST', '/backend/v1/diagnosis/subscribe', (e) => {
     return e.json(200, { success: true, consentReceived: true, dryRun: true })
   }
 
+  // Sanitização de UTMs recebidos (apenas strings, trim, max 100 caracteres)
+  // Fallbacks padrão do RD Station quando ausentes/vazios
+  const sanitizeUtmParam = (val) => {
+    if (typeof val === 'string') {
+      const trimmed = val.trim()
+      if (trimmed.length > 0) {
+        return trimmed.slice(0, 100)
+      }
+    }
+    return ''
+  }
+
+  const cleanSource = sanitizeUtmParam(body.utm_source)
+  const cleanMedium = sanitizeUtmParam(body.utm_medium)
+  const cleanCampaign = sanitizeUtmParam(body.utm_campaign)
+
+  const trafficSource = cleanSource || 'organizacao_inteligente'
+  const trafficMedium = cleanMedium || 'diagnostico_site'
+  const trafficCampaign = cleanCampaign || ''
+
   try {
     const col = $app.findCollectionByNameOrId('newsletter_subscribers')
     const record = new Record(col)
@@ -51,37 +71,58 @@ routerAdd('POST', '/backend/v1/diagnosis/subscribe', (e) => {
     record.set('source', 'OI - Diagnóstico concluído')
     $app.save(record)
 
-    // RD Station conversion — failures must never block
+    // RD Station conversion — failures must never block registration
+    let rdSynced = false
     try {
       const apiKey = $os.getenv('RD_STATION_API_KEY')
       if (apiKey) {
         const url =
           'https://api.rd.services/platform/conversions?api_key=' + encodeURIComponent(apiKey)
-        $http.send({
+
+        // Contrato RD Station Platform Conversions:
+        // - traffic_source, traffic_medium, traffic_campaign
+        // - traffic_value corresponde a utm_term (NÃO a utm_content); NÃO enviamos traffic_value nem utm_content aqui
+        // - tags, legal_bases, available_for_mailing
+        const rdPayload = {
+          conversion_identifier: 'OI - Diagnóstico concluído',
+          email: email,
+          name: name,
+          traffic_source: trafficSource,
+          traffic_medium: trafficMedium,
+          tags: ['organizacao-inteligente'],
+          legal_bases: [{ category: 'communications', type: 'consent', status: 'granted' }],
+        }
+
+        if (trafficCampaign) {
+          rdPayload.traffic_campaign = trafficCampaign
+        }
+
+        const res = $http.send({
           url: url,
           method: 'POST',
           body: JSON.stringify({
             event_type: 'CONVERSION',
             event_family: 'CDP',
-            payload: {
-              conversion_identifier: 'OI - Diagnóstico concluído',
-              email: email,
-              name: name,
-              traffic_source: 'organizacao_inteligente',
-              traffic_medium: 'diagnostico_site',
-              tags: ['organizacao-inteligente'],
-              legal_bases: [{ category: 'communications', type: 'consent', status: 'granted' }],
-            },
+            payload: rdPayload,
           }),
           headers: { 'Content-Type': 'application/json' },
           timeout: 10000,
         })
+
+        if (res && res.statusCode >= 200 && res.statusCode < 300) {
+          rdSynced = true
+        } else {
+          console.error(
+            'RD Station retornou status não-2xx:',
+            res ? res.statusCode : 'sem resposta',
+          )
+        }
       }
     } catch (rdErr) {
       console.error('RD Station falhou mas inscrição foi salva')
     }
 
-    return e.json(200, { success: true, consentReceived: true })
+    return e.json(200, { success: true, consentReceived: true, rd_synced: rdSynced })
   } catch (err) {
     throw new BadRequestError('Este email já está inscrito ou ocorreu um erro.', {
       email: new ValidationError('validation_not_unique', 'Este email já está inscrito.'),

@@ -5,6 +5,7 @@ import {
   setStoredUtm,
   captureAndPersistUtm,
   getKiwifyCheckoutUrl,
+  sanitizeUtmForSubmission,
   KIWIFY_CHECKOUT_BASE_URL,
   DEFAULT_UTM,
   UTM_SESSION_STORAGE_KEY,
@@ -188,6 +189,46 @@ describe('UTM Helper', () => {
         const parsed = new URL(urlStr)
         expect(parsed.searchParams.get('utm_content')).toBe(pos)
       }
+    })
+  })
+
+  describe('sanitizeUtmForSubmission', () => {
+    it('returns only strings, trims values, and limits strings to 100 characters', () => {
+      const input = {
+        utm_source: '  google_ads  ',
+        utm_medium: 'cpc',
+        utm_campaign: 'a'.repeat(120),
+        utm_content: 'banner_top',
+        extra_field: 'should_be_ignored',
+        invalid_num: 12345,
+      }
+
+      const res = sanitizeUtmForSubmission(input)
+      expect(res).toEqual({
+        utm_source: 'google_ads',
+        utm_medium: 'cpc',
+        utm_campaign: 'a'.repeat(100),
+        utm_content: 'banner_top',
+      })
+      expect((res as any).extra_field).toBeUndefined()
+    })
+
+    it('omits empty, whitespace-only or non-string values', () => {
+      const input = {
+        utm_source: '',
+        utm_medium: '   ',
+        utm_campaign: null,
+        utm_content: undefined,
+      }
+
+      const res = sanitizeUtmForSubmission(input)
+      expect(res).toEqual({})
+    })
+
+    it('safely handles non-object or null input', () => {
+      expect(sanitizeUtmForSubmission(null)).toEqual({})
+      expect(sanitizeUtmForSubmission(undefined)).toEqual({})
+      expect(sanitizeUtmForSubmission('invalid')).toEqual({})
     })
   })
 })
