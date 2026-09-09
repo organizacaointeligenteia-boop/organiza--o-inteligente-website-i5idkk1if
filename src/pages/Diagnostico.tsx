@@ -372,19 +372,26 @@ export default function Diagnostico() {
           {/* Kit presentation */}
           <Card className="border-border shadow-sm bg-secondary/40">
             <CardContent className="p-8 space-y-5">
-              <div className="flex items-start gap-3">
-                <FileText className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
-                <div className="space-y-2">
-                  <p className="font-semibold text-foreground text-lg">
-                    Kit Organização Inteligente
-                  </p>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Workbook de 26 páginas, apresentação visual e vídeo introdutório reunindo os 7
-                    modelos práticos.
-                  </p>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <FileText className="h-6 w-6 text-primary flex-shrink-0 mt-0.5" />
+                  <div className="space-y-2">
+                    <p className="font-semibold text-foreground text-lg">
+                      Kit Organização Inteligente
+                    </p>
+                    <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
+                      Sequência integrada com os 3 materiais: workbook em PDF de 26 páginas (com os
+                      7 modelos práticos e plano em 14 dias), apresentação visual e vídeo
+                      introdutório.
+                    </p>
+                  </div>
+                </div>
+                <div className="sm:text-right flex-shrink-0">
+                  <span className="text-xl md:text-2xl font-bold text-primary block">R$ 29,90</span>
+                  <span className="text-xs text-muted-foreground">pagamento único à vista</span>
                 </div>
               </div>
-              <Button asChild className="w-full gap-2">
+              <Button asChild className="w-full gap-2 font-semibold">
                 <Link to="/kit-organizacao-inteligente">
                   Conhecer o Kit <ArrowRight className="h-4 w-4" />
                 </Link>

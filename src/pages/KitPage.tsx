@@ -195,6 +195,78 @@ export default function KitPage() {
         </div>
       </section>
 
+      {/* Seção curta: Materiais Gratuitos Avulsos vs. Sequência Integrada do Kit */}
+      <section className="max-w-[900px] mx-auto animate-fade-in-up">
+        <div className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-6 shadow-sm">
+          <div className="text-center space-y-2">
+            <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
+              Entenda a diferença
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+              Materiais gratuitos avulsos vs. O Kit integrado
+            </h2>
+            <p className="text-muted-foreground text-sm md:text-base max-w-2xl mx-auto">
+              Nosso site oferece materiais gratuitos úteis, mas cada um resolve apenas uma parte
+              isolada.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            <div className="bg-secondary/40 border border-border/70 rounded-xl p-5 space-y-3">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/60" />
+                Materiais Gratuitos Avulsos
+              </h3>
+              <ul className="text-sm text-muted-foreground space-y-2 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-muted-foreground">•</span>
+                  <span>
+                    <strong>Foco pontual:</strong> cada checklist ou planilha atende uma necessidade
+                    específica de forma isolada.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-muted-foreground">•</span>
+                  <span>
+                    <strong>Sem conexão:</strong> você precisa definir sozinho como encaixar cada
+                    arquivo na sua rotina.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-muted-foreground">•</span>
+                  <span>Ideal para resolver um detalhe rápido do dia a dia.</span>
+                </li>
+              </ul>
+            </div>
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-5 space-y-3">
+              <h3 className="font-semibold text-primary flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary" />
+                Kit Organização Inteligente
+              </h3>
+              <ul className="text-sm text-foreground/90 space-y-2 leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold">•</span>
+                  <span>
+                    <strong>Sequência integrada:</strong> os 7 modelos práticos reunidos dentro de
+                    um único workbook de 26 páginas.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold">•</span>
+                  <span>
+                    <strong>Plano guiado em 14 dias:</strong> método passo a passo com apresentação
+                    visual e vídeo introdutório.
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold">•</span>
+                  <span>Acesso direto pela área de membros da Kiwify por R$ 29,90 à vista.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="space-y-10 animate-fade-in-up">
         <div className="text-center space-y-3">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Veja o que você recebe</h2>

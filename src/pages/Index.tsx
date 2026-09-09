@@ -48,16 +48,16 @@ export default function Index() {
   useEffect(() => {
     let cancelled = false
     Promise.all([
-      fetchWithTimeout(getArticles(4, 0), 5000)
-        .then((data) => (data.length > 0 ? data : getStaticArticles()))
-        .catch(() => getStaticArticles()),
+      fetchWithTimeout(getArticles(3, 0), 5000)
+        .then((data) => (data.length > 0 ? data.slice(0, 3) : getStaticArticles().slice(0, 3)))
+        .catch(() => getStaticArticles().slice(0, 3)),
       fetchWithTimeout(getDownloads(), 5000)
         .then((data) => (data.length > 0 ? data.slice(0, 4) : getStaticDownloads().slice(0, 4)))
         .catch(() => getStaticDownloads().slice(0, 4)),
     ])
       .then(([a, t]) => {
         if (cancelled) return
-        setArticles(a)
+        setArticles(a.slice(0, 3))
         setTools(t)
       })
       .finally(() => !cancelled && setLoading(false))
@@ -143,7 +143,7 @@ export default function Index() {
               size="lg"
               className="bg-white text-primary hover:bg-white/90 font-semibold w-full sm:w-auto"
             >
-              <Link to="/blog">Ver guias práticos</Link>
+              <Link to="/kit-organizacao-inteligente">Conhecer o Kit</Link>
             </Button>
             <Button
               variant="outline"
@@ -151,7 +151,61 @@ export default function Index() {
               asChild
               className="bg-transparent text-white border-white/30 hover:bg-white/10 w-full sm:w-auto font-medium"
             >
-              <Link to="/diagnostico">Receber checklist gratuito</Link>
+              <Link to="/diagnostico">Fazer diagnóstico gratuito</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Oferta do Kit logo após o Hero e antes de Artigos e Downloads */}
+      <section className="bg-gradient-to-br from-primary to-primary-light text-white rounded-[32px] p-8 md:p-16 space-y-8 relative overflow-hidden animate-fade-in-up">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white to-transparent pointer-events-none"></div>
+        <div className="relative z-10 max-w-3xl space-y-6">
+          <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md text-white border border-white/20 px-3.5 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider">
+            Oferta Principal · Apenas R$ 29,90 à vista
+          </div>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+            Kit Organização Inteligente
+          </h2>
+          <p className="text-lg text-primary-foreground/90 leading-relaxed">
+            A entrega real do Kit reúne 3 materiais complementares: workbook premium em PDF de 26
+            páginas, apresentação visual e vídeo introdutório. Todos os 7 modelos práticos estão
+            integrados dentro do workbook, acompanhados de um plano de implantação em 14 dias para
+            guiar sua rotina com clareza.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            {kitItems.map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3"
+              >
+                <item.icon className="h-5 w-5 flex-shrink-0" />
+                <span className="font-medium">{item.label}</span>
+                <CheckCircle2 className="h-5 w-5 ml-auto flex-shrink-0 text-white/80" />
+              </div>
+            ))}
+          </div>
+          <p className="text-sm text-primary-foreground/80">
+            Dentro do workbook de 26 páginas: Planner semanal, Checklist da vida organizada,
+            Controle de hábitos, Controle de documentos e prazos, Mapa de prioridades, Revisão
+            semanal e Plano de implantação em 14 dias. A compra direta do Kit não exige diagnóstico
+            nem cadastro prévio.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 pt-4">
+            <Button
+              asChild
+              size="lg"
+              className="bg-white text-primary hover:bg-white/90 font-semibold"
+            >
+              <Link to="/kit-organizacao-inteligente">Conhecer o Kit Organização Inteligente</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              size="lg"
+              className="bg-transparent text-white border-white/30 hover:bg-white/10 font-medium"
+            >
+              <Link to="/recomendados">Ver ferramentas recomendadas</Link>
             </Button>
           </div>
         </div>
@@ -176,23 +230,31 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Artigos em destaque (limitados a 3, catálogo integral em /blog mantido) */}
       <section className="space-y-10 animate-fade-in-up stagger-2">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Artigos em Destaque</h2>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">
+              Artigos em Destaque
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Confira 3 guias práticos selecionados para aprimorar sua rotina.
+            </p>
+          </div>
           <Button
             variant="ghost"
             asChild
             className="hidden sm:inline-flex text-primary hover:bg-primary/10"
           >
             <Link to="/blog">
-              Explorar todos <ArrowRight className="ml-2 h-4 w-4" />
+              Explorar todos os artigos <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
               <div key={i} className="space-y-3">
                 <Skeleton className="h-48 w-full rounded-2xl" />
                 <Skeleton className="h-6 w-3/4" />
@@ -209,8 +271,8 @@ export default function Index() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {articles.map((article) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {articles.slice(0, 3).map((article) => (
               <Card
                 key={article.id}
                 className="group flex flex-col overflow-hidden bg-card border-border transition-all duration-300 hover:-translate-y-2 hover:shadow-medium"
@@ -332,56 +394,6 @@ export default function Index() {
           >
             <Link to="/ferramentas-gratuitas">Acessar biblioteca completa</Link>
           </Button>
-        </div>
-      </section>
-
-      <section className="bg-gradient-to-br from-primary to-primary-light text-white rounded-[32px] p-8 md:p-16 space-y-8 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white to-transparent pointer-events-none"></div>
-        <div className="relative z-10 max-w-3xl space-y-6">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
-            Kit Organização Inteligente
-          </h2>
-          <p className="text-lg text-primary-foreground/90 leading-relaxed">
-            A entrega real do Kit reúne 3 materiais complementares: workbook premium em PDF de 26
-            páginas, apresentação visual e vídeo introdutório. Todos os 7 modelos práticos estão
-            integrados dentro do workbook, acompanhados de um plano de implantação em 14 dias para
-            guiar sua rotina com clareza.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-            {kitItems.map((item) => (
-              <div
-                key={item.label}
-                className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3"
-              >
-                <item.icon className="h-5 w-5 flex-shrink-0" />
-                <span className="font-medium">{item.label}</span>
-                <CheckCircle2 className="h-5 w-5 ml-auto flex-shrink-0 text-white/80" />
-              </div>
-            ))}
-          </div>
-          <p className="text-sm text-primary-foreground/80">
-            Dentro do workbook de 26 páginas: Planner semanal, Checklist da vida organizada,
-            Controle de hábitos, Controle de documentos e prazos, Mapa de prioridades, Revisão
-            semanal e Plano de implantação em 14 dias. A compra direta do Kit não exige diagnóstico
-            nem cadastro prévio.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Button
-              asChild
-              size="lg"
-              className="bg-white text-primary hover:bg-white/90 font-semibold"
-            >
-              <Link to="/kit-organizacao-inteligente">Conhecer o Kit Organização Inteligente</Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="bg-transparent text-white border-white/30 hover:bg-white/10 font-medium"
-            >
-              <Link to="/recomendados">Ver ferramentas recomendadas</Link>
-            </Button>
-          </div>
         </div>
       </section>
 
