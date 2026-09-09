@@ -91,6 +91,23 @@ const staticDownloads: StaticDownload[] = [
 
 const staticArticles: Article[] = [
   {
+    id: 'static-0',
+    title:
+      'Como organizar documentos digitais em pastas: um sistema simples para encontrar arquivos',
+    slug: 'como-organizar-documentos-digitais-em-pastas',
+    excerpt:
+      'Organize documentos digitais com um modelo de pastas, nomes de arquivos, exemplos práticos e uma rotina de dez minutos para manter tudo em ordem.',
+    category: 'Organização Pessoal',
+    featuredImage: 'https://img.usecurling.com/p/800/400?q=documents%20organization&dpr=2',
+    content: '',
+    publishedAt: '2026-09-08T12:00:00.000Z',
+    createdAt: now,
+    updatedAt: '08/09/2026',
+    readingTime: 7,
+    created: now,
+    updated: now,
+  } as Article,
+  {
     id: 'static-1',
     title: 'Como Criar Hábitos Duradouros: O Guia Completo',
     slug: 'como-criar-habitos',
@@ -146,7 +163,7 @@ const staticArticles: Article[] = [
     content: '',
     publishedAt: '2026-06-29T17:51:22.876Z',
     createdAt: now,
-    updatedAt: '2026-07-02T10:00:00.000Z',
+    updatedAt: '08/09/2026',
     readingTime: 8,
     created: now,
     updated: now,
@@ -162,7 +179,7 @@ const staticArticles: Article[] = [
     content: '',
     publishedAt: '2026-06-28T17:51:22.876Z',
     createdAt: now,
-    updatedAt: '2026-07-02T10:00:00.000Z',
+    updatedAt: '08/09/2026',
     readingTime: 9,
     created: now,
     updated: now,

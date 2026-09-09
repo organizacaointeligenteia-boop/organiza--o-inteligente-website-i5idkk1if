@@ -70,9 +70,9 @@ describe('staticCatalog', () => {
       expect(articles.length).toBeGreaterThan(0)
     })
 
-    it('returns exactly 17 articles', () => {
+    it('returns exactly 18 articles', () => {
       const articles = getStaticArticles()
-      expect(articles).toHaveLength(17)
+      expect(articles).toHaveLength(18)
     })
 
     it('every article has a truthy slug and title', () => {
@@ -83,12 +83,12 @@ describe('staticCatalog', () => {
       }
     })
 
-    it('all 17 slugs are unique', () => {
+    it('all 18 slugs are unique', () => {
       const articles = getStaticArticles()
       const slugs = articles.map((a) => a.slug)
       const uniqueSlugs = new Set(slugs)
       expect(uniqueSlugs.size).toBe(slugs.length)
-      expect(uniqueSlugs.size).toBe(17)
+      expect(uniqueSlugs.size).toBe(18)
     })
 
     it('each article slug resolves via find() against the array', () => {
