@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { getArticleBySlug, getArticlesList, type Article } from '@/services/articles'
+import { formatDateBr, getEditorialUpdatedDate } from '@/lib/dateUtils'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import {
@@ -121,13 +122,13 @@ export default function ArticlePage() {
           </span>
           <span className="text-muted-foreground font-normal">•</span>
           <span className="text-muted-foreground font-normal">
-            Publicado em {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
+            Publicado em {formatDateBr(article.publishedAt)}
           </span>
-          {article.updatedAt && (
+          {getEditorialUpdatedDate(article.publishedAt, article.updatedAt) && (
             <>
               <span className="text-muted-foreground font-normal">•</span>
               <span className="text-muted-foreground font-normal">
-                Atualizado em {new Date(article.updatedAt).toLocaleDateString('pt-BR')}
+                Atualizado em {getEditorialUpdatedDate(article.publishedAt, article.updatedAt)}
               </span>
             </>
           )}

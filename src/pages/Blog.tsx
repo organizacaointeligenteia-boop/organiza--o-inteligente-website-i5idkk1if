@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePageTitle } from '@/hooks/use-page-title'
 import { usePageMeta } from '@/hooks/use-page-meta'
 import { getArticlesList, type Article } from '@/services/articles'
+import { formatDateBr } from '@/lib/dateUtils'
 import { fetchWithTimeout } from '@/lib/apiHelpers'
 import { getStaticArticles } from '@/lib/staticCatalog'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -184,7 +185,7 @@ export default function Blog() {
               <CardHeader className="flex-1 p-6">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3 font-medium">
                   <Calendar className="h-4 w-4" />
-                  {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
+                  {formatDateBr(article.publishedAt)}
                 </div>
                 <CardTitle className="text-2xl leading-tight group-hover:text-primary transition-colors">
                   <Link to={`/blog/${article.slug}`}>{article.title}</Link>

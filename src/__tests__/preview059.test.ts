@@ -26,7 +26,7 @@ describe('Preview 0.0.59 Requirements: Content Batch 2', () => {
       expect(blogLocMatches).toHaveLength(18)
 
       expect(sitemapContent).toContain(
-        '<loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/como-organizar-documentos-digitais-em-pastas</loc>',
+        '<loc>https://organizeinteligente.com.br/blog/como-organizar-documentos-digitais-em-pastas</loc>',
       )
     })
   })
@@ -53,9 +53,9 @@ describe('Preview 0.0.59 Requirements: Content Batch 2', () => {
       expect(newArticle?.readingTime).toBe(7)
     })
 
-    it('mantém publishedAt em 08/09/2026 e updatedAt como texto 08/09/2026', () => {
+    it('mantém publishedAt em 08/09/2026 e updatedAt ausente pois não houve revisão posterior', () => {
       expect(newArticle?.publishedAt).toContain('2026-09-08')
-      expect(newArticle?.updatedAt).toBe('08/09/2026')
+      expect(newArticle?.updatedAt).toBeUndefined()
     })
 
     it('preserva datas originais dos dois artigos revisados e atualiza apenas updatedAt para 08/09/2026', () => {

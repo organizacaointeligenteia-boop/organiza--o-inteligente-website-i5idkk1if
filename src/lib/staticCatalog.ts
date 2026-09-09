@@ -102,7 +102,6 @@ const staticArticles: Article[] = [
     content: '',
     publishedAt: '2026-09-08T12:00:00.000Z',
     createdAt: now,
-    updatedAt: '08/09/2026',
     readingTime: 7,
     created: now,
     updated: now,

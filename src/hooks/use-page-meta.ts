@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-export const BASE_URL = 'https://organizacao-inteligente-website-943ee.goskip.app'
+export const BASE_URL = 'https://organizeinteligente.com.br'
 export const DEFAULT_IMAGE = '/og-image.png'
 
 export interface UsePageMetaOptions {
