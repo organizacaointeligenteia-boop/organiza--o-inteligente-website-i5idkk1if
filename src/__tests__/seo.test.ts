@@ -89,6 +89,29 @@ describe('SEO: static article slugs', () => {
     const slugs = articles.map((a) => a.slug)
     expect(new Set(slugs).size).toBe(17)
   })
+
+  it('all 17 titles are unique and non-empty', () => {
+    const articles = getStaticArticles()
+    const titles = articles.map((a) => a.title.trim())
+    expect(titles.every((t) => t.length > 0)).toBe(true)
+    expect(new Set(titles).size).toBe(17)
+  })
+
+  it('all 17 descriptions (excerpts) are unique and non-empty', () => {
+    const articles = getStaticArticles()
+    const excerpts = articles.map((a) => (a.excerpt || '').trim())
+    expect(excerpts.every((e) => e.length > 0)).toBe(true)
+    expect(new Set(excerpts).size).toBe(17)
+  })
+
+  it('articles are sorted descending by publishedAt', () => {
+    const articles = getStaticArticles()
+    for (let i = 0; i < articles.length - 1; i++) {
+      const current = new Date(articles[i].publishedAt).getTime()
+      const next = new Date(articles[i + 1].publishedAt).getTime()
+      expect(current).toBeGreaterThanOrEqual(next)
+    }
+  })
 })
 
 describe('SEO: applyPageMeta (DOM side-effects)', () => {

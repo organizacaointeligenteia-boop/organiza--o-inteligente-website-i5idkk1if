@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core pages -->
   <url>
     <loc>https://organizacao-inteligente-website-943ee.goskip.app/</loc>
   </url>
@@ -14,5 +15,73 @@
   </url>
   <url>
     <loc>https://organizacao-inteligente-website-943ee.goskip.app/ferramentas-gratuitas</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/recomendados</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/sobre</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/contato</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/termos</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/privacidade</loc>
+  </url>
+
+  <!-- 17 Public Blog Articles -->
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/como-criar-habitos</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/guia-produtividade-2026</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/rotina-matinal-produtiva</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/checklist-organizacao-pessoal</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/como-organizar-rotina-semanal</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/minimalismo-digital-organize-vida-online</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/sistema-metas-smart-alcance-objetivos</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/construir-disciplina-sem-motivacao</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/mindfulness-para-produtividade-foco-presente</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/metodo-gtd-organizar-tarefas-projetos</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/organizacao-financeira-pessoal-zero-controle</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/habitos-atomicos-pequenas-mudancas</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/eliminar-procrastinacao-definitivamente</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/produtividade-tecnica-pomodoro-guia</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/guia-completo-planejamento-semanal</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/como-criar-rotina-matinal-produtiva</loc>
+  </url>
+  <url>
+    <loc>https://organizacao-inteligente-website-943ee.goskip.app/blog/5-tecnicas-organizacao-home-office</loc>
   </url>
 </urlset>

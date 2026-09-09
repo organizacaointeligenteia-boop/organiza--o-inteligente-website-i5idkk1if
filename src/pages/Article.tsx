@@ -121,8 +121,16 @@ export default function ArticlePage() {
           </span>
           <span className="text-muted-foreground font-normal">•</span>
           <span className="text-muted-foreground font-normal">
-            {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
+            Publicado em {new Date(article.publishedAt).toLocaleDateString('pt-BR')}
           </span>
+          {article.updatedAt && (
+            <>
+              <span className="text-muted-foreground font-normal">•</span>
+              <span className="text-muted-foreground font-normal">
+                Atualizado em {new Date(article.updatedAt).toLocaleDateString('pt-BR')}
+              </span>
+            </>
+          )}
           {article.readingTime ? (
             <>
               <span className="text-muted-foreground font-normal">•</span>

@@ -10,6 +10,7 @@ export interface Article {
   category: string
   readingTime?: number
   publishedAt: string
+  updatedAt?: string
   created: string
   updated: string
 }
