@@ -88,6 +88,7 @@ describe('Preview 0.0.58 Content Batch Requirements', () => {
     expect(migContent).toContain('26 páginas')
     expect(migContent).toContain('/ferramentas-gratuitas')
     expect(migContent).toContain('/kit-organizacao-inteligente')
+    expect(migContent).not.toContain('pay.kiwify.com.br/cS6LHAp')
     expect(migContent).not.toContain('pay.kiwify.com.br/qpFPGxF') // internal CTA to /kit-organizacao-inteligente, not direct checkout
   })
 })

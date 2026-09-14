@@ -4,14 +4,14 @@
  * Requisitos:
  * 1. Lê utm_source, utm_medium, utm_campaign, utm_content da URL atual.
  * 2. Guarda SOMENTE esses 4 valores em sessionStorage, sem cookies de terceiros nem dados pessoais.
- * 3. Repassa UTMs ao link do checkout oficial (https://pay.kiwify.com.br/qpFPGxF).
+ * 3. Repassa UTMs ao link do checkout oficial (https://pay.kiwify.com.br/cS6LHAp).
  * 4. Aplica padrões quando não houver campanha:
  *    utm_source=site, utm_medium=referral, utm_campaign=kit_organizacao_inteligente
- * 5. Define utm_content por posição do CTA (ex: diagnostico_resultado, pagina_kit, home).
+ * 5. Define utm_content por posição do CTA (ex: pagina_kit_hero, pagina_kit_meio, pagina_kit_rodape, pagina_kit, diagnostico_resultado, home).
  * 6. Preserva parâmetros pré-existentes na URL do checkout.
  */
 
-export const KIWIFY_CHECKOUT_BASE_URL = 'https://pay.kiwify.com.br/qpFPGxF'
+export const KIWIFY_CHECKOUT_BASE_URL = 'https://pay.kiwify.com.br/cS6LHAp'
 
 export const DEFAULT_UTM = {
   utm_source: 'site',
@@ -21,7 +21,17 @@ export const DEFAULT_UTM = {
 
 export const UTM_SESSION_STORAGE_KEY = 'oi_utm_params'
 
-export type UtmPosition = 'diagnostico_resultado' | 'pagina_kit' | 'home' | (string & {})
+export type UtmPosition =
+  | 'diagnostico_resultado'
+  | 'pagina_kit'
+  | 'pagina_kit_hero'
+  | 'pagina_kit_meio'
+  | 'pagina_kit_rodape'
+  | 'hero'
+  | 'meio'
+  | 'rodape'
+  | 'home'
+  | (string & {})
 
 export interface UtmParams {
   utm_source?: string
@@ -158,7 +168,7 @@ export function sanitizeUtmForSubmission(raw: unknown): UtmParams {
 
 /**
  * Constrói a URL do checkout Kiwify com as UTMs de atribuição:
- * - Mantém a base configurada (padrão https://pay.kiwify.com.br/qpFPGxF)
+ * - Mantém a base configurada (padrão https://pay.kiwify.com.br/cS6LHAp)
  * - Preserva quaisquer query params já existentes na baseUrl
  * - Aplica os UTMs capturados na sessão/URL
  * - Aplica os valores padrão (utm_source=site, utm_medium=referral, utm_campaign=kit_organizacao_inteligente) quando ausentes

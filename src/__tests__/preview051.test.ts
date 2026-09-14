@@ -18,8 +18,10 @@ describe('Preview 0.0.51 Specific Requirements', () => {
       expect(kitPageSource).toContain('R$ 29,90 à vista')
     })
 
-    it('preserva checkout qpFPGxF via helper getKiwifyCheckoutUrl', () => {
-      expect(kitPageSource).toContain("getKiwifyCheckoutUrl('pagina_kit')")
+    it('preserva checkout oficial cS6LHAp via helper getKiwifyCheckoutUrl com posições distintas', () => {
+      expect(kitPageSource).toContain("getKiwifyCheckoutUrl('hero')")
+      expect(kitPageSource).toContain("getKiwifyCheckoutUrl('meio')")
+      expect(kitPageSource).toContain("getKiwifyCheckoutUrl('rodape')")
     })
 
     it('informa acesso pela área de membros da Kiwify após confirmação do pagamento e orienta conferir e-mail', () => {

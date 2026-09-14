@@ -141,7 +141,7 @@ describe('UTM Helper', () => {
 
     it('preserves existing non-UTM query parameters already present on the checkout baseUrl', () => {
       const customCheckoutUrl =
-        'https://pay.kiwify.com.br/qpFPGxF?src=affiliate_123&coupon=SPECIAL10'
+        'https://pay.kiwify.com.br/cS6LHAp?src=affiliate_123&coupon=SPECIAL10'
       const urlString = getKiwifyCheckoutUrl(
         'home',
         customCheckoutUrl,
@@ -149,7 +149,7 @@ describe('UTM Helper', () => {
       )
       const url = new URL(urlString)
 
-      expect(url.origin + url.pathname).toBe('https://pay.kiwify.com.br/qpFPGxF')
+      expect(url.origin + url.pathname).toBe('https://pay.kiwify.com.br/cS6LHAp')
       // Preserved params
       expect(url.searchParams.get('src')).toBe('affiliate_123')
       expect(url.searchParams.get('coupon')).toBe('SPECIAL10')
@@ -181,8 +181,15 @@ describe('UTM Helper', () => {
       expect(url2.searchParams.get('utm_content')).toBe('diagnostico_resultado')
     })
 
-    it('works across different CTA positions: diagnostico_resultado, pagina_kit, home', () => {
-      const positions = ['diagnostico_resultado', 'pagina_kit', 'home'] as const
+    it('works across different CTA positions: hero, meio, rodape, diagnostico_resultado, pagina_kit, home', () => {
+      const positions = [
+        'hero',
+        'meio',
+        'rodape',
+        'diagnostico_resultado',
+        'pagina_kit',
+        'home',
+      ] as const
       for (const pos of positions) {
         sessionStorage.clear()
         const urlStr = getKiwifyCheckoutUrl(pos, KIWIFY_CHECKOUT_BASE_URL, '')

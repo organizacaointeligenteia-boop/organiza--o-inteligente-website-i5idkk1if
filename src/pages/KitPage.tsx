@@ -176,11 +176,7 @@ export default function KitPage() {
               size="lg"
               className="bg-white text-primary hover:bg-white/90 font-semibold text-base px-8 py-6 shadow-medium"
             >
-              <a
-                href={getKiwifyCheckoutUrl('pagina_kit')}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={getKiwifyCheckoutUrl('hero')} target="_blank" rel="noopener noreferrer">
                 Comprar o Kit
               </a>
             </Button>
@@ -472,7 +468,7 @@ export default function KitPage() {
           </p>
         </div>
         <Button asChild size="lg" className="w-full sm:w-auto text-base font-semibold px-8 py-6">
-          <a href={getKiwifyCheckoutUrl('pagina_kit')} target="_blank" rel="noopener noreferrer">
+          <a href={getKiwifyCheckoutUrl('meio')} target="_blank" rel="noopener noreferrer">
             Comprar o Kit
           </a>
         </Button>
@@ -516,7 +512,7 @@ export default function KitPage() {
         <p className="text-xl font-bold text-primary">R$ 29,90 à vista</p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
           <Button asChild size="lg" className="font-semibold px-8">
-            <a href={getKiwifyCheckoutUrl('pagina_kit')} target="_blank" rel="noopener noreferrer">
+            <a href={getKiwifyCheckoutUrl('rodape')} target="_blank" rel="noopener noreferrer">
               Comprar o Kit
             </a>
           </Button>

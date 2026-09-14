@@ -51,8 +51,10 @@ describe('Preview 0.0.54 Specific Requirements', () => {
       expect(occurrences).toBeGreaterThanOrEqual(2)
     })
 
-    it('preserva checkout oficial qpFPGxF via helper getKiwifyCheckoutUrl', () => {
-      expect(kitPageSource).toContain("getKiwifyCheckoutUrl('pagina_kit')")
+    it('preserva checkout oficial cS6LHAp via helper getKiwifyCheckoutUrl com posições hero, meio e rodape', () => {
+      expect(kitPageSource).toContain("getKiwifyCheckoutUrl('hero')")
+      expect(kitPageSource).toContain("getKiwifyCheckoutUrl('meio')")
+      expect(kitPageSource).toContain("getKiwifyCheckoutUrl('rodape')")
     })
 
     it('possui seção curta explicando diferença entre materiais gratuitos avulsos e kit integrado', () => {
