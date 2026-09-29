@@ -149,7 +149,7 @@ export default function KitPage() {
   usePageMeta({
     path: '/kit-organizacao-inteligente',
     description:
-      'Organize sua semana, seus documentos, seus hábitos e suas prioridades com um sistema prático de 3 materiais, pronto para imprimir ou usar aplicativo de anotação compatível.',
+      'Organize sua semana em 14 dias, com um sistema simples e prático. Um Kit digital para tirar pendências da cabeça, definir prioridades e acompanhar sua rotina sem complicação.',
   })
 
   return (
@@ -160,12 +160,12 @@ export default function KitPage() {
           <span className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-md text-white border border-white/20 px-4 py-2 rounded-full text-sm font-medium animate-fade-in-up">
             <Sparkles className="h-4 w-4" /> Kit prático de organização
           </span>
-          <h1 className="text-[40px] md:text-[56px] font-bold tracking-tight text-white leading-[1.1] animate-fade-in-up">
-            Kit Organização Inteligente
+          <h1 className="text-[36px] md:text-[52px] font-bold tracking-tight text-white leading-[1.15] animate-fade-in-up">
+            Organize sua semana em 14 dias, com um sistema simples e prático
           </h1>
           <p className="text-[18px] md:text-[22px] text-primary-foreground/90 max-w-[650px] leading-relaxed animate-fade-in-up">
-            Organize sua semana, seus documentos, seus hábitos e suas prioridades. 3 materiais
-            complementares, prontos para imprimir ou usar aplicativo de anotação compatível.
+            Um Kit digital para tirar pendências da cabeça, definir prioridades e acompanhar sua
+            rotina sem complicação.
           </p>
           <div className="pt-4 flex flex-col items-center gap-3 animate-fade-in-up">
             <span className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
@@ -177,7 +177,7 @@ export default function KitPage() {
               className="bg-white text-primary hover:bg-white/90 font-semibold text-base px-8 py-6 shadow-medium"
             >
               <a href={getKiwifyCheckoutUrl('hero')} target="_blank" rel="noopener noreferrer">
-                Comprar o Kit
+                Ver o Kit e começar agora
               </a>
             </Button>
           </div>
@@ -186,7 +186,85 @@ export default function KitPage() {
             dias
           </p>
           <p className="text-xs text-white/70">
-            Acesso pela área de membros da Kiwify após confirmação do pagamento (conferir e-mail).
+            Acesso liberado pela área de membros da Kiwify após confirmação do pagamento (conferir
+            e-mail).
+          </p>
+        </div>
+      </section>
+
+      {/* Seção curta: O que você recebe */}
+      <section className="max-w-[900px] mx-auto w-full animate-fade-in-up">
+        <div className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-6 shadow-sm">
+          <div className="text-center space-y-2">
+            <span className="inline-block text-xs font-semibold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">
+              Entrega do Kit
+            </span>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+              O que você recebe
+            </h2>
+            <p className="text-muted-foreground text-sm md:text-base max-w-xl mx-auto">
+              Ao adquirir o Kit Organização Inteligente por R$ 29,90 à vista, você recebe acesso
+              completo aos seguintes materiais:
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="flex items-start gap-3 bg-secondary/40 border border-border/70 rounded-xl p-4">
+              <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm md:text-base">
+                  Workbook PDF de 26 páginas e 7 modelos
+                </h3>
+                <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                  Material completo pronto para imprimir ou usar aplicativo de anotação compatível.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 bg-secondary/40 border border-border/70 rounded-xl p-4">
+              <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Presentation className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm md:text-base">
+                  Apresentação visual
+                </h3>
+                <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                  Guia conceitual com a visão estruturada do método para consulta rápida.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 bg-secondary/40 border border-border/70 rounded-xl p-4">
+              <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Video className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm md:text-base">
+                  Vídeo introdutório
+                </h3>
+                <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                  Instruções essenciais e diretas para iniciar a aplicação do sistema.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 bg-secondary/40 border border-border/70 rounded-xl p-4">
+              <div className="w-9 h-9 bg-primary/10 text-primary rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                <CalendarDays className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground text-sm md:text-base">
+                  Plano de implantação em 14 dias
+                </h3>
+                <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
+                  Roteiro prático passo a passo integrado ao workbook para orientar seus primeiros
+                  14 dias.
+                </p>
+              </div>
+            </div>
+          </div>
+          <p className="text-center text-xs text-muted-foreground pt-1">
+            Acesso liberado pela área de membros da Kiwify após confirmação do pagamento (conferir
+            e-mail).
           </p>
         </div>
       </section>
@@ -327,9 +405,9 @@ export default function KitPage() {
 
       <section className="max-w-[800px] mx-auto text-center space-y-4 animate-fade-in-up">
         <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
-          Pare de tentar guardar tudo na cabeça. O Kit Organização Inteligente reúne tudo o que você
-          precisa em um workbook completo, acompanhado de apresentação visual e vídeo introdutório
-          para você transformar pendências em um plano claro de ação.
+          Pare de tentar guardar tudo na cabeça. O Kit Organização Inteligente reúne o que você
+          precisa para transformar pendências em prioridades claras e instalar uma rotina estável em
+          14 dias.
         </p>
       </section>
 
@@ -420,7 +498,7 @@ export default function KitPage() {
         <div className="text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Como funciona</h2>
           <p className="text-muted-foreground text-lg mt-3">
-            Seis passos simples para começar a usar o kit hoje.
+            Passo a passo simples para acessar e começar a aplicar o Kit.
           </p>
         </div>
         <div className="max-w-[700px] mx-auto space-y-4">

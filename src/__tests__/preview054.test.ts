@@ -38,7 +38,7 @@ describe('Preview 0.0.54 Specific Requirements', () => {
 
   describe('KitPage (KitPage.tsx): Preço, Checkout e Conteúdo', () => {
     it('preço "R$ 29,90 à vista" junto ao primeiro CTA', () => {
-      const firstCtaIdx = kitPageSource.indexOf('Comprar o Kit')
+      const firstCtaIdx = kitPageSource.indexOf('Ver o Kit e começar agora')
       const priceIdx = kitPageSource.indexOf('R$ 29,90 à vista')
       expect(priceIdx).toBeGreaterThan(-1)
       expect(firstCtaIdx).toBeGreaterThan(-1)
@@ -46,7 +46,8 @@ describe('Preview 0.0.54 Specific Requirements', () => {
       expect(Math.abs(priceIdx - firstCtaIdx)).toBeLessThan(300)
     })
 
-    it('CTAs de pagamento utilizam o rótulo "Comprar o Kit"', () => {
+    it('CTA hero utiliza "Ver o Kit e começar agora" e CTAs subsequentes utilizam "Comprar o Kit"', () => {
+      expect(kitPageSource).toContain('Ver o Kit e começar agora')
       const occurrences = (kitPageSource.match(/Comprar o Kit/g) || []).length
       expect(occurrences).toBeGreaterThanOrEqual(2)
     })
@@ -76,6 +77,27 @@ describe('Preview 0.0.54 Specific Requirements', () => {
       expect(kitPageSource).toMatch(/7 modelos/i)
       expect(kitPageSource).toMatch(/14 dias/i)
       expect(kitPageSource).toMatch(/área de membros da Kiwify/i)
+    })
+
+    it('apresenta hero com textos exatos da revisão de conversão e seção "O que você recebe"', () => {
+      expect(kitPageSource).toContain(
+        'Organize sua semana em 14 dias, com um sistema simples e prático',
+      )
+      expect(kitPageSource).toContain(
+        'Um Kit digital para tirar pendências da cabeça, definir prioridades e acompanhar sua rotina sem complicação.',
+      )
+      expect(kitPageSource).toContain('Ver o Kit e começar agora')
+      expect(kitPageSource).toContain('O que você recebe')
+      expect(kitPageSource).toContain('Workbook PDF de 26 páginas e 7 modelos')
+      expect(kitPageSource).toContain('Apresentação visual')
+      expect(kitPageSource).toContain('Vídeo introdutório')
+      expect(kitPageSource).toContain('Plano de implantação em 14 dias')
+    })
+
+    it('mantém a garantia de 7 dias e as perguntas frequentes', () => {
+      expect(kitPageSource).toContain('Garantia de 7 dias')
+      expect(kitPageSource).toContain('Perguntas frequentes')
+      expect(kitPageSource).not.toContain('7 arquivos')
     })
   })
 

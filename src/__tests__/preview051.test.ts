@@ -9,7 +9,8 @@ describe('Preview 0.0.51 Specific Requirements', () => {
   const indexSource = readFileSync(resolve(__dirname, '../pages/Index.tsx'), 'utf-8')
 
   describe('KitPage: CTAs e Preço', () => {
-    it('tem CTAs com rótulo "Comprar o Kit"', () => {
+    it('tem CTA hero "Ver o Kit e começar agora" e CTAs subsequentes "Comprar o Kit"', () => {
+      expect(kitPageSource).toContain('Ver o Kit e começar agora')
       expect(kitPageSource).toContain('Comprar o Kit')
     })
 
