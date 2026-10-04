@@ -1,4 +1,4 @@
-import { useState, useId, useEffect } from 'react'
+import { useState, useId, useEffect, useRef } from 'react'
 import {
   Sparkles,
   RotateCcw,
@@ -53,6 +53,9 @@ export default function PilotOrganizacaoPage() {
   // Status notification for screen readers
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>('')
 
+  // Accessible ref for moving focus after text submit
+  const submitFeedbackRef = useRef<HTMLHeadingElement | HTMLDivElement | null>(null)
+
   // Unique accessible IDs
   const textInputId = useId()
   const personalizeCheckboxId = useId()
@@ -103,11 +106,13 @@ export default function PilotOrganizacaoPage() {
   const handleTogglePersonalization = (checked: boolean) => {
     setUsePersonalization(checked)
     if (!checked) {
-      // Clear all personalized preferences and interests immediately
+      // Clear all markings, text, interests, sample selection, pendencies and choices
       setUserInterests([])
       setCheckedSteps({})
       setChoices({})
       setClassificationResult(null)
+      setFreeText('')
+      setPreviewModelKey('priorities')
       setLiveAnnouncement('Personalização desativada. Preferências da sessão foram limpas.')
     } else {
       setLiveAnnouncement('Personalização da sessão ativada.')
@@ -128,17 +133,25 @@ export default function PilotOrganizacaoPage() {
     )
   }
 
-  // Handle Path change
+  // Handle Path change (idempotent if already active)
   const handleSelectPath = (path: PilotPath) => {
-    setSelectedPath(path)
-    setClassificationResult(null) // clear any pending banner
-    setCheckedSteps({}) // reset steps on path switch
-
     const pathLabels: Record<PilotPath, string> = {
       routine: 'Organizar minha rotina',
       kit: 'Conhecer a ferramenta / kit',
       guidance: 'Receber orientação de uso',
     }
+
+    if (selectedPath === path) {
+      // Idempotent: preserve current choices and checked steps
+      setClassificationResult(null)
+      setLiveAnnouncement(`Caminho mantido: ${pathLabels[path]}`)
+      return
+    }
+
+    setSelectedPath(path)
+    setClassificationResult(null) // clear any pending banner
+    setCheckedSteps({}) // reset steps only on path switch
+
     addUniqueInterest(pathLabels[path])
     setLiveAnnouncement(`Caminho selecionado: ${pathLabels[path]}`)
   }
@@ -184,6 +197,13 @@ export default function PilotOrganizacaoPage() {
     // Clear input field and character counter immediately (privacy / no echoing)
     setFreeText('')
 
+    // Move focus to the status/result heading after state updates
+    setTimeout(() => {
+      if (submitFeedbackRef.current) {
+        submitFeedbackRef.current.focus()
+      }
+    }, 50)
+
     if (result.intent === 'restricted') {
       setLiveAnnouncement('Aviso: o texto aborda tema fora do escopo desta demonstração.')
       return
@@ -197,12 +217,17 @@ export default function PilotOrganizacaoPage() {
     }
 
     if (result.suggestedPath) {
+      const isSwitching = selectedPath !== result.suggestedPath
       setSelectedPath(result.suggestedPath)
-      setCheckedSteps({})
+      if (isSwitching) {
+        setCheckedSteps({})
+      }
 
       if (result.topic !== 'general') {
-        setChoices((prev) => ({ ...prev, topic: result.topic }))
-        addUniqueInterest(TOPIC_LABELS[result.topic])
+        if (usePersonalization) {
+          setChoices((prev) => ({ ...prev, topic: result.topic }))
+          addUniqueInterest(TOPIC_LABELS[result.topic])
+        }
       }
 
       const pathNames: Record<PilotPath, string> = {
@@ -210,7 +235,9 @@ export default function PilotOrganizacaoPage() {
         kit: 'Conhecer a ferramenta / kit',
         guidance: 'Receber orientação de uso',
       }
-      addUniqueInterest(pathNames[result.suggestedPath])
+      if (usePersonalization) {
+        addUniqueInterest(pathNames[result.suggestedPath])
+      }
       setLiveAnnouncement(`Caminho sugerido por regra local: ${pathNames[result.suggestedPath]}`)
     }
   }
@@ -338,8 +365,11 @@ export default function PilotOrganizacaoPage() {
         {/* Aviso de tema restrito se acionado por texto livre */}
         {classificationResult?.intent === 'restricted' && (
           <div
+            ref={submitFeedbackRef}
+            tabIndex={-1}
             role="alert"
-            className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 sm:p-5 space-y-2"
+            aria-live="polite"
+            className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 sm:p-5 space-y-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
           >
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
@@ -352,7 +382,7 @@ export default function PilotOrganizacaoPage() {
                 </p>
                 <p className="text-xs text-amber-700 mt-2 font-medium">
                   Para continuar a exploração de métodos de organização pessoal, escolha um dos
-                  caminhos abaixo:
+                  caminhos disponíveis:
                 </p>
               </div>
             </div>
@@ -362,14 +392,17 @@ export default function PilotOrganizacaoPage() {
         {/* Aviso de texto desconhecido */}
         {classificationResult?.intent === 'unknown' && (
           <div
+            ref={submitFeedbackRef}
+            tabIndex={-1}
             role="alert"
-            className="bg-slate-100 border border-slate-200 text-slate-800 rounded-2xl p-4 space-y-1"
+            aria-live="polite"
+            className="bg-slate-100 border border-slate-200 text-slate-800 rounded-2xl p-4 space-y-1 focus:outline-none focus:ring-2 focus:ring-slate-500"
           >
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-slate-600" aria-hidden="true" />
               <p className="text-xs sm:text-sm font-medium">
                 Não identificamos palavras-chave conhecidas no texto. Por favor, escolha um dos 3
-                caminhos pelos botões abaixo para iniciar sua experiência.
+                caminhos disponíveis para iniciar sua experiência.
               </p>
             </div>
           </div>
@@ -647,7 +680,9 @@ export default function PilotOrganizacaoPage() {
                 </span>
                 <h2
                   id="routine-result-title"
-                  className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5"
+                  ref={submitFeedbackRef}
+                  tabIndex={-1}
+                  className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5 focus:outline-none focus:ring-2 focus:ring-slate-900 rounded-sm"
                 >
                   Um começo em {currentMinutes} minutos
                 </h2>
@@ -715,7 +750,9 @@ export default function PilotOrganizacaoPage() {
               </span>
               <h2
                 id="guidance-result-title"
-                className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5"
+                ref={submitFeedbackRef}
+                tabIndex={-1}
+                className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5 focus:outline-none focus:ring-2 focus:ring-slate-900 rounded-sm"
               >
                 Orientação passo a passo ({currentMinutes} minutos)
               </h2>
@@ -756,7 +793,12 @@ export default function PilotOrganizacaoPage() {
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Catálogo de Demonstração
               </span>
-              <h2 id="kit-result-title" className="text-xl sm:text-2xl font-bold text-slate-900">
+              <h2
+                id="kit-result-title"
+                ref={submitFeedbackRef}
+                tabIndex={-1}
+                className="text-xl sm:text-2xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 rounded-sm"
+              >
                 Amostras Editoriais Fictícias
               </h2>
               <p className="text-xs sm:text-sm text-slate-600">
@@ -765,18 +807,17 @@ export default function PilotOrganizacaoPage() {
               </p>
             </div>
 
-            {/* Alternar abas de amostras */}
+            {/* Alternar amostras com role="group" e aria-pressed (Tab + Enter/Space) */}
             <div
               className="flex flex-wrap gap-2"
-              role="tablist"
+              role="group"
               aria-label="Formatos do catálogo editorial"
             >
               {KIT_SAMPLES.map((sample) => (
                 <button
                   key={sample.key}
                   type="button"
-                  role="tab"
-                  aria-selected={previewModelKey === sample.key}
+                  aria-pressed={previewModelKey === sample.key}
                   onClick={() => setPreviewModelKey(sample.key)}
                   className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 min-h-[40px] ${
                     previewModelKey === sample.key

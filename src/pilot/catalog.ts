@@ -145,65 +145,105 @@ export function resolveSuggestedModel(
 /**
  * Builds 3 contextual checklist steps for the Routine path card.
  */
+/**
+ * Distributes total minutes across 3 steps as positive integers such that
+ * sum(parts) === minutes, with no orphan minutes or negative values.
+ *
+ * Primary distribution profile:
+ * - 5 min: [2, 2, 1] (or [2, 1, 2] for steps where focus is on execution)
+ * - 10 min: [4, 3, 3] (or [3, 4, 3] for steps)
+ * - 20 min: [8, 6, 6] (or [6, 8, 6] for steps)
+ */
+export function distributeMinutes(
+  minutes: number,
+  profile: 'primary-first' | 'primary-middle' = 'primary-first',
+): [number, number, number] {
+  const safeMinutes = Math.max(3, Math.round(minutes))
+  if (profile === 'primary-middle') {
+    if (safeMinutes === 5) return [2, 2, 1] // [microação: 2, execução: 2, registro: 1] -> sum 5
+    if (safeMinutes === 10) return [3, 4, 3] // sum 10
+    if (safeMinutes === 20) return [6, 8, 6] // sum 20
+    const m2 = Math.max(1, Math.round(safeMinutes * 0.4))
+    const m1 = Math.max(1, Math.floor((safeMinutes - m2) / 2))
+    const m3 = Math.max(1, safeMinutes - m1 - m2)
+    return [m1, m2, m3]
+  }
+
+  // primary-first (priorities & week)
+  if (safeMinutes === 5) return [2, 2, 1] // sum 5
+  if (safeMinutes === 10) return [4, 3, 3] // sum 10
+  if (safeMinutes === 20) return [8, 6, 6] // sum 20
+  const m1 = Math.max(1, Math.round(safeMinutes * 0.4))
+  const m2 = Math.max(1, Math.floor((safeMinutes - m1) / 2))
+  const m3 = Math.max(1, safeMinutes - m1 - m2)
+  return [m1, m2, m3]
+}
+
+/**
+ * Builds 3 contextual checklist steps for the Routine path card.
+ */
 export function buildRoutineSteps(
   formatKey: EditorialModelKey,
   minutes: number,
 ): RoutineStepItem[] {
   if (formatKey === 'week') {
+    const [m1, m2, m3] = distributeMinutes(minutes, 'primary-first')
     return [
       {
         id: 'step-week-1',
-        text: `Identificar 2 compromissos inegociáveis da semana (${Math.max(1, Math.round(minutes * 0.4))} min)`,
+        text: `Identificar 2 compromissos inegociáveis da semana (${m1} min)`,
         detail: 'Anote compromissos com horário marcado para enxergar seus blocos livres.',
       },
       {
         id: 'step-week-2',
-        text: `Reservar 1 bloco de respiro para imprevistos (${Math.max(1, Math.round(minutes * 0.3))} min)`,
+        text: `Reservar 1 bloco de respiro para imprevistos (${m2} min)`,
         detail: 'Deixe um intervalo sem tarefas agendadas para acolher demandas urgentes.',
       },
       {
         id: 'step-week-3',
-        text: `Revisar o próximo passo de amanhã (${Math.max(1, Math.round(minutes * 0.3))} min)`,
+        text: `Revisar o próximo passo de amanhã (${m3} min)`,
         detail: 'Defina apenas a primeira ação da manhã seguinte para iniciar sem hesitação.',
       },
     ]
   }
 
   if (formatKey === 'steps') {
+    const [m1, m2, m3] = distributeMinutes(minutes, 'primary-middle')
     return [
       {
         id: 'step-prog-1',
-        text: `Escolher 1 microação simples para hoje (${Math.max(1, Math.round(minutes * 0.3))} min)`,
+        text: `Escolher 1 microação simples para hoje (${m1} min)`,
         detail: 'Selecione uma ação curta que não exija preparação excessiva.',
       },
       {
         id: 'step-prog-2',
-        text: `Executar no momento mais acessível do seu turno (${Math.max(1, Math.round(minutes * 0.4))} min)`,
+        text: `Executar no momento mais acessível do seu turno (${m2} min)`,
         detail: 'Foque apenas no início da tarefa, sem se preocupar em concluí-la toda.',
       },
       {
         id: 'step-prog-3',
-        text: `Registrar se a ação foi leve ou pesada (${Math.max(1, Math.round(minutes * 0.3))} min)`,
+        text: `Registrar se a ação foi leve ou pesada (${m3} min)`,
         detail: 'Anote mentalmente ou no rascunho o que facilitou o início.',
       },
     ]
   }
 
   // priorities (default)
+  const [m1, m2, m3] = distributeMinutes(minutes, 'primary-first')
   return [
     {
       id: 'step-prio-1',
-      text: `Listar no rascunho 3 pendências urgentes (${Math.max(1, Math.round(minutes * 0.4))} min)`,
+      text: `Listar no rascunho 3 pendências urgentes (${m1} min)`,
       detail: 'Tire tudo da cabeça sem filtrar ainda a ordem de importância.',
     },
     {
       id: 'step-prio-2',
-      text: `Destacar uma única tarefa essencial do dia (${Math.max(1, Math.round(minutes * 0.3))} min)`,
+      text: `Destacar uma única tarefa essencial do dia (${m2} min)`,
       detail: 'Escolha aquela que, se finalizada, torna o seu dia produtivo.',
     },
     {
       id: 'step-prio-3',
-      text: `Definir o que pode esperar o próximo ciclo (${Math.max(1, Math.round(minutes * 0.3))} min)`,
+      text: `Definir o que pode esperar o próximo ciclo (${m3} min)`,
       detail: 'Mova o restante para uma lista de apoio sem culpa.',
     },
   ]

@@ -1,4 +1,5 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
 import { isPilotHostnameAllowed, getCurrentHostname } from './guard'
 import { PilotUnavailablePage } from './PilotUnavailable'
 
@@ -6,8 +7,15 @@ import { PilotUnavailablePage } from './PilotUnavailable'
 const LazyPilotPage = lazy(() => import('./PilotOrganizacaoPage'))
 
 export function PilotRoute() {
-  const currentHost = getCurrentHostname()
-  const isAllowed = isPilotHostnameAllowed(currentHost)
+  // useLocation ensures the guard is re-evaluated on any router transition/navigation
+  const location = useLocation()
+
+  // Guard evaluation per navigation/render: strictly pure exact allowlist check
+  // Executed BEFORE mounting/rendering LazyPilotPage
+  const isAllowed = useMemo(() => {
+    const currentHost = getCurrentHostname()
+    return isPilotHostnameAllowed(currentHost)
+  }, [location.pathname, location.search])
 
   if (!isAllowed) {
     // Render unavailable page IMMEDIATELY.
