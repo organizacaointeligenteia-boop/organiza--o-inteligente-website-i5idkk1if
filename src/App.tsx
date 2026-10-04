@@ -10,6 +10,7 @@ import { AuthProvider } from '@/hooks/use-auth'
 import Layout from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import NotFound from './pages/NotFound'
+import { PilotRoute } from './pilot/PilotRoute'
 
 const Home = lazy(() => import('./pages/Index'))
 const Category = lazy(() => import('./pages/Category'))
@@ -77,6 +78,8 @@ const App = () => (
                   <Route path="/admin" element={<Admin />} />
                 </Route>
               </Route>
+              {/* Piloto de Demonstração (isolado fora do Layout público) */}
+              <Route path="/piloto-organizacao" element={<PilotRoute />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
