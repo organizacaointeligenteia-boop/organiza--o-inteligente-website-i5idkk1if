@@ -31,12 +31,14 @@ routerAdd('POST', '/api/oi/auth/signup', (e) => {
     }
   } catch (_) {}
 
-  // Criar membro (role SEMPRE 'member', nunca admin)
+  // Criar membro com allowlist ESTRITA de campos:
+  // email, password e name opcional higienizado.
+  // role SEMPRE fixado como 'member' pelo servidor — payload do cliente NÃO tem poder de definir role nem verified nem tokenKey.
   const membershipsCol = $app.findCollectionByNameOrId('oi_memberships')
   const record = new Record(membershipsCol)
   record.setEmail(email)
   record.setPassword(password)
-  record.setVerified(true) // Auto-verificado em ambiente de teste ou pré-aprovado
+  record.setVerified(true) // Auto-verificado em ambiente de teste/local
   record.set('name', name || 'Membro OI')
   record.set('role', 'member')
   $app.save(record)
@@ -79,3 +81,46 @@ routerAdd('POST', '/api/oi/auth/reset-password-request', (e) => {
     inboxSimulated: true,
   })
 })
+
+/**
+ * Rota protegida para atualização segura de dados cadastrais básicos pelo próprio membro:
+ * POST /api/oi/auth/update-profile
+ * Exige autenticação estrita na coleção oi_memberships.
+ * Permite APENAS alterar 'name' ou 'phone'.
+ * NUNCA permite alterar 'role', 'verified', 'tokenKey' ou campos sensíveis.
+ */
+routerAdd(
+  'POST',
+  '/api/oi/auth/update-profile',
+  (e) => {
+    const authRecord = e.auth
+    if (!authRecord || authRecord.collection().name !== 'oi_memberships') {
+      return e.json(401, { error: 'Autenticação de membro da OI necessária' })
+    }
+
+    const body = e.requestInfo().body || {}
+    // Allowlist restrita: apenas name e phone
+    if (typeof body.name === 'string') {
+      authRecord.set('name', body.name.trim())
+    }
+    if (typeof body.phone === 'string') {
+      authRecord.set('phone', body.phone.trim())
+    }
+
+    // Garantir que role permanece inalterado mesmo se enviado no body
+    authRecord.set('role', authRecord.getString('role') || 'member')
+
+    $app.save(authRecord)
+
+    return e.json(200, {
+      success: true,
+      member: {
+        id: authRecord.id,
+        email: authRecord.getString('email'),
+        name: authRecord.getString('name'),
+        role: authRecord.getString('role'),
+      },
+    })
+  },
+  $apis.requireAuth(),
+)

@@ -15,6 +15,12 @@
     "dailyMax": 5,
     "cycleMax": 50
   },
+  "product": {
+    "paymentModel": "single_payment",
+    "durationDays": 21,
+    "recurring": false,
+    "habitPromise": false
+  },
   "cycle": {
     "waitingDays": 7,
     "durationDays": 21,

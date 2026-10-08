@@ -18,10 +18,13 @@ migrate(
         // Cliente autenticado pode ver seus próprios dados de membership
         listRule: "@request.auth.id != '' && id = @request.auth.id",
         viewRule: "@request.auth.id != '' && id = @request.auth.id",
-        // Criação via endpoint ou auth pública, mas atualização de campos sensíveis bloqueada
-        createRule: '',
-        updateRule: "@request.auth.id != '' && id = @request.auth.id",
-        deleteRule: null, // Proibido cliente deletar conta diretamente
+        // BLOQUEIO TOTAL DE CRUD DIRETO PELO CLIENTE:
+        // createRule: null -> impede criação direta via SDK/REST; cadastro SOMENTE via /api/oi/auth/signup com role='member' fixo no servidor.
+        // updateRule: null -> impede modificação direta de campos sensíveis (role, verified, tokenKey, email, etc.) pelo cliente.
+        // deleteRule: null -> impede deleção direta pelo cliente.
+        createRule: null,
+        updateRule: null,
+        deleteRule: null,
         fields: [
           { name: 'name', type: 'text', required: false },
           {
@@ -232,7 +235,7 @@ migrate(
           {
             name: 'category',
             type: 'select',
-            values: ['rotina', 'prioridades', 'documentos', 'habitos'],
+            values: ['rotina', 'prioridades', 'documentos', 'organizacao'],
             maxSelect: 1,
             required: true,
           },

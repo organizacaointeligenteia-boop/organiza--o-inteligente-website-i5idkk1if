@@ -39,10 +39,10 @@ routerAdd(
       return e.json(400, { error: 'Objetivo deve conter pelo menos 3 caracteres.' })
     }
 
-    const validCategories = ['rotina', 'prioridades', 'documentos', 'habitos']
+    const validCategories = ['rotina', 'prioridades', 'documentos', 'organizacao', 'habitos']
     if (!validCategories.includes(category)) {
       return e.json(400, {
-        error: 'Categoria inválida. Escolha entre: rotina, prioridades, documentos, habitos.',
+        error: 'Categoria inválida. Escolha entre: rotina, prioridades, documentos, organizacao.',
       })
     }
 
@@ -197,28 +197,28 @@ routerAdd(
           done: false,
         },
       ]
-    } else if (category === 'habitos') {
+    } else if (category === 'organizacao' || category === 'habitos') {
       modelKey = 'steps'
       strategySummary =
-        'Construção de constância por microações viáveis associadas a um gatilho de rotina existente.'
+        'Estruturação prática de rotina e ambiente por microações viáveis de organização imediata.'
       defaultActions = [
         {
           id: 'act_1',
-          text: 'Escolher uma microação de até 5 minutos vinculada a um hábito que você já faz todo dia',
+          text: 'Escolher uma ação prática de organização de até 5 minutos para executar agora',
           priority: 'alta',
           deadline: 'Hoje',
           done: false,
         },
         {
           id: 'act_2',
-          text: 'Registrar a realização com um marcador simples imediatamente após a execução',
+          text: 'Registrar o progresso em um marcador visual de conclusão simples',
           priority: 'media',
           deadline: 'Diário',
           done: false,
         },
         {
           id: 'act_3',
-          text: 'Avaliar ao final da primeira semana se a microação foi confortável ou se precisa de ajuste',
+          text: 'Avaliar ao final dos primeiros 7 dias a consistência do fluxo organizado',
           priority: 'media',
           deadline: '7 dias',
           done: false,

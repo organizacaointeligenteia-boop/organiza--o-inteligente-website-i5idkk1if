@@ -1,0 +1,60 @@
+// standalone-backend/fixtures/syntheticTestSuite.json
+{
+  "description": "Suíte completa de fixtures sintéticas para validação de testes locais do Backend Standalone OI",
+  "generatedAt": "2025-05-10T00:00:00.000Z",
+  "scenarios": {
+    "auth": {
+      "newMember": {
+        "email": "synthetic_member_test@organizacaointeligente.com.br",
+        "password": "Password123!",
+        "name": "Membro Teste Automatizado",
+        "attemptedRoleInjection": "admin",
+        "expectedFixedRole": "member"
+      },
+      "seedUsers": {
+        "admin": "admin-oi@organizacaointeligente.com.br",
+        "user1": "user1@organizacaointeligente.com.br",
+        "user2": "user2@organizacaointeligente.com.br",
+        "defaultPassword": "Skip@Pass"
+      }
+    },
+    "kiwify": {
+      "validAiProduct": {
+        "productId": "oi-ia-tool",
+        "productName": "Ferramenta de IA da OI (21 Dias de Uso)",
+        "orderAmount": 9700,
+        "isSinglePayment": true
+      },
+      "mismatchedKitProduct": {
+        "productId": "kit-organizacao-inteligente",
+        "productName": "Kit de Organização Inteligente",
+        "expectedIgnored": true,
+        "reason": "Produto diferente da Ferramenta de IA da OI"
+      },
+      "refund": {
+        "status": "refunded",
+        "expectedCycleState": "revoked"
+      },
+      "chargeback": {
+        "status": "chargeback",
+        "expectedCycleState": "revoked"
+      }
+    },
+    "cycle": {
+      "waitingDays": 7,
+      "durationDays": 21,
+      "retentionDays": 30,
+      "states": ["waiting_start", "active", "expired", "revoked", "purged"]
+    },
+    "quotas": {
+      "dailyLimit": 5,
+      "cycleLimit": 50
+    },
+    "jev": {
+      "withoutKey": {
+        "expectedProvider": "manual-honest",
+        "disclaimerIncluded": true
+      }
+    }
+  }
+}

@@ -12,15 +12,17 @@ echo " Organização Inteligente - Backend Standalone (Local)"
 echo " Ferramenta de IA - 21 Dias de Uso Pago"
 echo "=========================================================="
 
-# Checar binário do pocketbase
+# Checar binário do pocketbase (ex: pocketbase oficial 0.40.5 darwin_arm64 ou linux/amd64)
 PB_BIN="./pocketbase"
 if [ ! -f "$PB_BIN" ]; then
-  if command -v pocketbase &> /dev/null; then
+  if [ -f "./pocketbase_darwin_arm64" ]; then
+    PB_BIN="./pocketbase_darwin_arm64"
+  elif command -v pocketbase &> /dev/null; then
     PB_BIN="pocketbase"
   else
-    echo "Binário do PocketBase não encontrado em ./pocketbase."
-    echo "Baixe a versão oficial (v0.23+ ou v0.26+) em https://pocketbase.io/docs/"
-    echo "ou extraia o executável compatível com seu sistema operacional nesta pasta."
+    echo "Binário do PocketBase não encontrado em ./pocketbase ou ./pocketbase_darwin_arm64."
+    echo "Coloque o executável oficial do PocketBase (ex: v0.40.5 darwin_arm64) nesta pasta."
+    echo "Download oficial: https://pocketbase.io/docs/"
     exit 1
   fi
 fi

@@ -97,7 +97,7 @@ describe('Pilot Frontend 0.0.64 - Regressões e Correções de QA', () => {
       )
 
       expect(pageSource).toContain('produto pago separado do Kit')
-      expect(pageSource).toContain('Preço e periodicidade ainda serão definidos')
+      expect(pageSource).toContain('Pagamento Único por 21 Dias')
     })
 
     it('mantém isolamento estrito sem liberação insegura por localStorage ou query string', () => {

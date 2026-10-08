@@ -46,8 +46,10 @@ describe('Preview 0.0.70 - Validação dos Contratos e Regras do Backend Standal
       expect(content).toContain('oi_quotas')
       expect(content).toContain('oi_plans')
       expect(content).toContain('oi_ai_audit')
-      // Regras de bloqueio de escrita direta por cliente
+      // Regras de bloqueio total de CRUD direto por cliente na coleção oi_memberships
       expect(content).toContain('createRule: null')
+      expect(content).toContain('updateRule: null')
+      expect(content).toContain('deleteRule: null')
     })
 
     it('contém a migração de seed demo com duas contas de membros e um admin sintético', () => {

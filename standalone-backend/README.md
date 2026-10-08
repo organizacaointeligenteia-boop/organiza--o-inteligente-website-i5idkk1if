@@ -1,6 +1,6 @@
 # Backend Standalone Executável · Ferramenta de IA de Organização Inteligente (OI)
 
-Este pacote contém o backend completo e isolado para execução LOCAL e controlada pelo proprietário do produto pago "Ferramenta de IA da Organização Inteligente" (21 dias de uso por ciclo).
+Este pacote contém o backend completo e isolado para execução LOCAL e controlada pelo proprietário do produto pago "Ferramenta de IA da Organização Inteligente" (pagamento único por 21 dias de uso da ferramenta, sem renovação e sem promessa de hábito).
 
 > **Aviso de Isolamento:** Este backend NUNCA deve ser misturado com o PocketBase compartilhado do website público ou do Kit. Ele roda em sua própria instância e armazena os dados localmente no diretório `pb_data/`.
 
@@ -15,9 +15,9 @@ Este pacote contém o backend completo e isolado para execução LOCAL e control
   - `oi_webhook_kiwify.js`: Webhook autenticado com token, correlação de produto e conta, prevenção de ressurreição após refund/chargeback, ignorando compras do Kit.
   - `oi_cycle_routes.js`: Gestão atômica do ciclo de 21 dias (`GET /api/oi/cycle/status`, `POST /api/oi/cycle/start`), regras de expiração e expurgo após 30 dias.
   - `oi_plans_routes.js`: Criação e ajuste de planos (`POST /api/oi/plans/create`, `POST /api/oi/plans/adjust`), controle de cotas (5/dia e 50/ciclo), integração oficial Jev (`/v1/systemone`) ou modo manual honesto, e exportação segura de PDF (`GET /api/oi/plans/export-pdf`).
-  - `oi_auth_routes.js`: Rotas complementares de cadastro e reset local sem envio real de emails.
-- `config/`: Configurações e parâmetros operacionais.
-- `scripts/`: Scripts para inicialização (`run-local.sh`, `run-local.bat`).
+  - `oi_auth_routes.js`: Rotas complementares de cadastro com allowlist estrita e role='member' fixo, atualização segura de perfil e reset local sem envio real de emails.
+- `config/`: Configurações e parâmetros operacionais (pagamento único por 21 dias, sem renovação).
+- `scripts/`: Scripts para inicialização (`run-local.sh`, `run-local.bat`) e testes de integração HTTP reais (`run-integration-tests.sh`, `run-integration-tests.mjs`).
 - `fixtures/`: Payloads sintéticos de teste para simulação Kiwify e Jev.
 
 ---
@@ -25,14 +25,15 @@ Este pacote contém o backend completo e isolado para execução LOCAL e control
 ## 2. Como Executar Localmente
 
 ### Pré-requisitos
-1. Baixar o executável oficial do PocketBase (v0.23 ou superior) para seu sistema operacional em:
+1. Baixar o executável oficial do PocketBase (compatível com a versão 0.40.5 darwin_arm64 ou compatível com seu sistema operacional) em:
    https://pocketbase.io/docs/
-2. Colocar o arquivo executável (`pocketbase` no Linux/macOS ou `pocketbase.exe` no Windows) dentro desta pasta raiz do pacote.
+2. Colocar o arquivo executável (`pocketbase` no Linux/macOS ou `pocketbase.exe` no Windows) dentro desta pasta raiz do pacote `standalone-backend/`.
 
-### No Linux ou macOS:
+### No macOS / Linux (ARM64 / x86_64):
 ```bash
 chmod +x ./pocketbase
 chmod +x ./scripts/run-local.sh
+chmod +x ./scripts/run-integration-tests.sh
 ./scripts/run-local.sh
 ```
 
@@ -42,6 +43,7 @@ scripts\run-local.bat
 ```
 
 O servidor iniciará em `http://127.0.0.1:8090`. O painel de administração local estará disponível em `http://127.0.0.1:8090/_/`.
+Aviso de honestidade: o servidor NÃO roda nem rodou em nuvem/neste ambiente; ele é exclusivamente executado de forma local pelo proprietário.
 
 ---
 

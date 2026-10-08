@@ -27,10 +27,15 @@ import {
   FileText,
   CheckCircle2,
   Circle,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { STANDALONE_PACKAGE_BUNDLE } from './standaloneSources'
 
 export default function PilotOrganizacaoPage() {
   const { user, isAuthenticated, loading, signOut } = useAuth()
@@ -57,6 +62,41 @@ export default function PilotOrganizacaoPage() {
   const [formNotes, setFormNotes] = useState('')
   const [creatingPlan, setCreatingPlan] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
+
+  // Estados da Área de Testes Recolhida
+  const [isTestAreaOpen, setIsTestAreaOpen] = useState(false)
+  const [isSourceAuditOpen, setIsSourceAuditOpen] = useState(false)
+  const [copiedCode, setCopiedCode] = useState(false)
+
+  // Geração de download do pacote via Blob no cliente
+  const handleDownloadBundleBlob = () => {
+    try {
+      const jsonStr = JSON.stringify(STANDALONE_PACKAGE_BUNDLE, null, 2)
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `oi-standalone-backend-v${STANDALONE_PACKAGE_BUNDLE.version}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      setActionMessage('Download do pacote standalone (JSON completo) iniciado com sucesso!')
+    } catch (_) {
+      setActionMessage('Não foi possível gerar o download direto pelo navegador.')
+    }
+  }
+
+  const handleCopyCode = async () => {
+    try {
+      const jsonStr = JSON.stringify(STANDALONE_PACKAGE_BUNDLE, null, 2)
+      await navigator.clipboard.writeText(jsonStr)
+      setCopiedCode(true)
+      setTimeout(() => setCopiedCode(false), 2500)
+    } catch {
+      /* intentionally ignored */
+    }
+  }
 
   // Atualizar cliente quando a URL for modificada pelo usuário
   const handleConnectEndpoint = (e: React.FormEvent) => {
@@ -278,265 +318,380 @@ export default function PilotOrganizacaoPage() {
           </div>
         </section>
 
-        {/* Seção de Conexão e Pacote Standalone (Exclusiva para o Proprietário / Testes) */}
+        {/* Seção de Testes e Conexão Standalone (Recolhida e separada da interface de cliente) */}
         <section
           aria-labelledby="standalone-package-title"
-          className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-5 shadow-xs"
+          className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <Terminal className="w-3.5 h-3.5 text-slate-600" />
-                Backend Standalone Executável (Local)
-              </span>
-              <h2 id="standalone-package-title" className="text-lg font-bold text-slate-900">
-                Pacote Isolado para Execução pelo Proprietário
-              </h2>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Terminal className="w-4 h-4 text-slate-600 shrink-0" />
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                  Ambiente Técnico de Testes & Execução Local
+                </span>
+                <h2
+                  id="standalone-package-title"
+                  className="text-sm sm:text-base font-bold text-slate-900"
+                >
+                  Backend Standalone Isolado (Proprietário)
+                </h2>
+              </div>
             </div>
-            <a
-              href="/oi-standalone-backend.tar.gz"
-              download="oi-standalone-backend.tar.gz"
-              className="inline-flex items-center gap-2 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-xl transition-colors shadow-2xs"
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsTestAreaOpen(!isTestAreaOpen)}
+              className="text-xs h-8 gap-1.5 shrink-0"
+              aria-expanded={isTestAreaOpen}
+              aria-controls="standalone-test-panel"
             >
-              <Download className="w-4 h-4" />
-              Baixar Pacote Standalone (.tar.gz)
-            </a>
+              {isTestAreaOpen ? (
+                <>
+                  <ChevronUp className="w-3.5 h-3.5" />
+                  Recolher Área de Testes
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-3.5 h-3.5" />
+                  Expandir Área de Testes
+                </>
+              )}
+            </Button>
           </div>
 
-          <p className="text-xs text-slate-600 leading-relaxed">
-            Conforme instrução técnica, o backend deste projeto é um único PocketBase compartilhado
-            sem novas migrações. O pacote acima contém o PocketBase completo isolado com migrações
-            de esquema (<code>oi_memberships</code>, <code>oi_orders</code>, <code>oi_cycles</code>,{' '}
-            <code>oi_quotas</code>, <code>oi_plans</code>), hooks de Kiwify e rotas de ciclos para
-            execução em seu ambiente local.
-          </p>
-
-          <form
-            onSubmit={handleConnectEndpoint}
-            className="pt-2 flex flex-wrap sm:flex-nowrap gap-2 items-center"
-          >
-            <div className="flex-1 min-w-[240px]">
-              <Input
-                type="text"
-                placeholder="Ex.: http://127.0.0.1:8090 (URL do endpoint isolado local)"
-                value={standaloneUrlInput}
-                onChange={(e) => setStandaloneUrlInput(e.target.value)}
-                className="text-xs h-9 bg-slate-50"
-              />
-            </div>
-            <Button type="submit" size="sm" variant="outline" className="text-xs h-9 shrink-0">
-              {standaloneUrlInput ? 'Conectar Endpoint' : 'Redefinir Padrão'}
-            </Button>
-          </form>
-
-          {actionMessage && (
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700">
-              {actionMessage}
-            </div>
-          )}
-
-          {/* Interface Ativa do Ciclo de 21 Dias se o cliente estiver conectado ao backend standalone */}
-          {standaloneClient && cycleStatus && (
-            <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-                <div className="space-y-0.5">
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                    Ciclo de 21 Dias
+          {isTestAreaOpen && (
+            <div id="standalone-test-panel" className="space-y-5 pt-3 border-t border-slate-100">
+              <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-slate-900">
+                    Entrega dos Fontes Completos (Vite Module)
                   </div>
-                  <div className="text-sm font-semibold text-slate-900">
-                    Status: <span className="uppercase text-blue-600">{cycleStatus.status}</span>
-                  </div>
+                  <p className="text-[11px] text-slate-600">
+                    Pacote versão {STANDALONE_PACKAGE_BUNDLE.version} contendo{' '}
+                    {STANDALONE_PACKAGE_BUNDLE.totalFiles} arquivos (migrações, hooks, scripts,
+                    fixtures e testes HTTP reais).
+                  </p>
                 </div>
                 <Button
+                  type="button"
                   size="sm"
-                  variant="ghost"
-                  onClick={refreshCycle}
-                  disabled={cycleLoading}
-                  className="text-xs"
+                  onClick={handleDownloadBundleBlob}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-xs gap-2 rounded-xl h-9"
                 >
-                  <RefreshCw
-                    className={`w-3.5 h-3.5 mr-1.5 ${cycleLoading ? 'animate-spin' : ''}`}
-                  />
-                  Atualizar
+                  <Download className="w-4 h-4" />
+                  Gerar download do pacote
                 </Button>
               </div>
 
-              {cycleStatus.status === 'waiting_start' && (
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
-                  <p className="text-xs text-amber-900 leading-relaxed">
-                    Sua compra está confirmada! Você tem até 7 dias para iniciar voluntariamente seu
-                    ciclo de 21 dias.
-                  </p>
-                  <Button
-                    onClick={handleStartCycle}
-                    disabled={cycleLoading}
-                    className="bg-amber-600 hover:bg-amber-700 text-white text-xs"
-                  >
-                    <Play className="w-3.5 h-3.5 mr-1.5" />
-                    Começar meus 21 dias agora
-                  </Button>
+              {/* Seção recolhida de auditoria: Código do pacote standalone */}
+              <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
+                <div className="flex items-center justify-between px-4 py-2.5 bg-slate-100/70 border-b border-slate-200">
+                  <span className="text-xs font-bold text-slate-800">
+                    Código do pacote standalone
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleCopyCode}
+                      className="text-xs h-7 gap-1 text-slate-700"
+                    >
+                      {copiedCode ? (
+                        <>
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          Copiado
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          Copiar JSON
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setIsSourceAuditOpen(!isSourceAuditOpen)}
+                      className="text-xs h-7 gap-1"
+                    >
+                      {isSourceAuditOpen ? (
+                        <>
+                          <ChevronUp className="w-3 h-3" />
+                          Ocultar
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-3 h-3" />
+                          Visualizar
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-              )}
 
-              {cycleStatus.status === 'active' && (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="bg-white p-3 rounded-xl border border-slate-200">
-                    <div className="text-[11px] text-slate-500">Dias Restantes</div>
-                    <div className="text-lg font-bold text-slate-900">
-                      {cycleStatus.daysRemaining} dias
-                    </div>
+                {isSourceAuditOpen && (
+                  <div className="p-3 bg-slate-950 text-slate-100 overflow-x-auto max-h-[400px]">
+                    <pre
+                      aria-label="Código do pacote standalone"
+                      className="text-[11px] font-mono leading-relaxed select-all"
+                    >
+                      {JSON.stringify(STANDALONE_PACKAGE_BUNDLE, null, 2)}
+                    </pre>
                   </div>
-                  <div className="bg-white p-3 rounded-xl border border-slate-200">
-                    <div className="text-[11px] text-slate-500">Cota Diária</div>
-                    <div className="text-lg font-bold text-slate-900">
-                      {cycleStatus.quotas?.dailyRemaining} / 5
-                    </div>
-                  </div>
-                  <div className="bg-white p-3 rounded-xl border border-slate-200">
-                    <div className="text-[11px] text-slate-500">Cota do Ciclo</div>
-                    <div className="text-lg font-bold text-slate-900">
-                      {cycleStatus.quotas?.cycleRemaining} / 50
-                    </div>
-                  </div>
-                  <div className="bg-white p-3 rounded-xl border border-slate-200">
-                    <div className="text-[11px] text-slate-500">Expiração</div>
-                    <div className="text-xs font-semibold text-slate-700 truncate">
-                      {cycleStatus.expiresAt?.substring(0, 10)}
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
 
-              {cycleStatus.status === 'expired' && (
-                <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-700 space-y-1">
-                  <div className="font-semibold text-slate-900">Período de 21 Dias Expirado</div>
-                  <p>
-                    Seu acesso está em modo de somente consulta/exportação de resultados pelos
-                    próximos 30 dias.
-                  </p>
-                </div>
-              )}
-
-              {/* Formulário de Criação de Plano se ciclo estiver ativo */}
-              {cycleStatus.canCreatePlans && (
+              {/* Configuração de endpoint local */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-slate-800">
+                  Conexão com PocketBase Standalone Local:
+                </Label>
                 <form
-                  onSubmit={handleCreatePlan}
-                  className="bg-white p-4 rounded-xl border border-slate-200 space-y-3"
+                  onSubmit={handleConnectEndpoint}
+                  className="flex flex-wrap sm:flex-nowrap gap-2 items-center"
                 >
-                  <div className="font-semibold text-xs text-slate-900">
-                    Criar Novo Plano de Organização
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-[11px]">Categoria</Label>
-                      <select
-                        value={formCategory}
-                        onChange={(e) =>
-                          setFormCategory(
-                            e.target.value as 'rotina' | 'prioridades' | 'documentos' | 'habitos',
-                          )
-                        }
-                        className="w-full text-xs h-8 border rounded-md px-2 bg-slate-50"
-                      >
-                        <option value="rotina">Rotina Diária</option>
-                        <option value="prioridades">Prioridades e Foco</option>
-                        <option value="documentos">Organização de Documentos</option>
-                        <option value="habitos">Criação de Hábitos</option>
-                      </select>
-                    </div>
-                    <div>
-                      <Label className="text-[11px]">Tempo Disponível</Label>
-                      <select
-                        value={formTime}
-                        onChange={(e) =>
-                          setFormTime(e.target.value as '5m' | '10m' | '20m' | '45m')
-                        }
-                        className="w-full text-xs h-8 border rounded-md px-2 bg-slate-50"
-                      >
-                        <option value="5m">5 minutos</option>
-                        <option value="10m">10 minutos</option>
-                        <option value="20m">20 minutos</option>
-                        <option value="45m">45 minutos</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-[11px]">Objetivo Específico</Label>
+                  <div className="flex-1 min-w-[240px]">
                     <Input
-                      placeholder="Ex.: Organizar meus recibos de despesas do mês"
-                      value={formObjective}
-                      onChange={(e) => setFormObjective(e.target.value)}
-                      className="text-xs h-8"
-                      required
+                      type="text"
+                      placeholder="Ex.: http://127.0.0.1:8090 (URL do endpoint isolado local)"
+                      value={standaloneUrlInput}
+                      onChange={(e) => setStandaloneUrlInput(e.target.value)}
+                      className="text-xs h-9 bg-white"
                     />
                   </div>
                   <Button
                     type="submit"
                     size="sm"
-                    disabled={creatingPlan}
-                    className="text-xs bg-slate-900 text-white"
+                    variant="outline"
+                    className="text-xs h-9 shrink-0"
                   >
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    {creatingPlan ? 'Processando...' : 'Gerar Plano com Biblioteca Revisável'}
+                    {standaloneUrlInput ? 'Conectar Endpoint' : 'Redefinir Padrão'}
                   </Button>
                 </form>
+              </div>
+
+              {actionMessage && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900">
+                  {actionMessage}
+                </div>
               )}
 
-              {/* Lista de Planos do Usuário */}
-              {plans.length > 0 && (
-                <div className="space-y-3 pt-2">
-                  <div className="text-xs font-bold text-slate-900">
-                    Meus Planos ({plans.length})
+              {/* Interface Ativa do Ciclo de 21 Dias se o cliente estiver conectado ao backend standalone */}
+              {standaloneClient && cycleStatus && (
+                <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                    <div className="space-y-0.5">
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        Ciclo de 21 Dias
+                      </div>
+                      <div className="text-sm font-semibold text-slate-900">
+                        Status:{' '}
+                        <span className="uppercase text-blue-600">{cycleStatus.status}</span>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={refreshCycle}
+                      disabled={cycleLoading}
+                      className="text-xs"
+                    >
+                      <RefreshCw
+                        className={`w-3.5 h-3.5 mr-1.5 ${cycleLoading ? 'animate-spin' : ''}`}
+                      />
+                      Atualizar
+                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    {plans.map((p) => (
-                      <div
-                        key={p.id}
-                        className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-2"
+
+                  {cycleStatus.status === 'waiting_start' && (
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
+                      <p className="text-xs text-amber-900 leading-relaxed">
+                        Sua compra está confirmada! Você tem até 7 dias para iniciar voluntariamente
+                        seu ciclo de 21 dias.
+                      </p>
+                      <Button
+                        onClick={handleStartCycle}
+                        disabled={cycleLoading}
+                        className="bg-amber-600 hover:bg-amber-700 text-white text-xs"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-slate-900">
-                            {p.title} (v{p.version})
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleExportPdf(p.id)}
-                            className="text-[11px] h-7"
-                          >
-                            <FileText className="w-3 h-3 mr-1" />
-                            PDF
-                          </Button>
-                        </div>
-                        <p className="text-slate-600 text-[11px]">{p.strategySummary}</p>
-                        <div className="space-y-1 pt-1">
-                          {p.actionsChecklist.map((act) => (
-                            <button
-                              key={act.id}
-                              type="button"
-                              onClick={() => handleToggleChecklist(p, act.id)}
-                              className="w-full flex items-center gap-2 text-left hover:bg-slate-50 p-1 rounded"
-                            >
-                              {act.done ? (
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                              ) : (
-                                <Circle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                              )}
-                              <span
-                                className={
-                                  act.done
-                                    ? 'line-through text-slate-400 text-[11px]'
-                                    : 'text-slate-700 text-[11px]'
-                                }
-                              >
-                                {act.text}
-                              </span>
-                            </button>
-                          ))}
+                        <Play className="w-3.5 h-3.5 mr-1.5" />
+                        Começar meus 21 dias agora
+                      </Button>
+                    </div>
+                  )}
+
+                  {cycleStatus.status === 'active' && (
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="bg-white p-3 rounded-xl border border-slate-200">
+                        <div className="text-[11px] text-slate-500">Dias Restantes</div>
+                        <div className="text-lg font-bold text-slate-900">
+                          {cycleStatus.daysRemaining} dias
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200">
+                        <div className="text-[11px] text-slate-500">Cota Diária</div>
+                        <div className="text-lg font-bold text-slate-900">
+                          {cycleStatus.quotas?.dailyRemaining} / 5
+                        </div>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200">
+                        <div className="text-[11px] text-slate-500">Cota do Ciclo</div>
+                        <div className="text-lg font-bold text-slate-900">
+                          {cycleStatus.quotas?.cycleRemaining} / 50
+                        </div>
+                      </div>
+                      <div className="bg-white p-3 rounded-xl border border-slate-200">
+                        <div className="text-[11px] text-slate-500">Expiração</div>
+                        <div className="text-xs font-semibold text-slate-700 truncate">
+                          {cycleStatus.expiresAt?.substring(0, 10)}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {cycleStatus.status === 'expired' && (
+                    <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-700 space-y-1">
+                      <div className="font-semibold text-slate-900">
+                        Período de 21 Dias Expirado
+                      </div>
+                      <p>
+                        Seu acesso está em modo de somente consulta/exportação de resultados pelos
+                        próximos 30 dias.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Formulário de Criação de Plano se ciclo estiver ativo */}
+                  {cycleStatus.canCreatePlans && (
+                    <form
+                      onSubmit={handleCreatePlan}
+                      className="bg-white p-4 rounded-xl border border-slate-200 space-y-3"
+                    >
+                      <div className="font-semibold text-xs text-slate-900">
+                        Criar Novo Plano de Organização
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-[11px]">Categoria</Label>
+                          <select
+                            value={formCategory}
+                            onChange={(e) =>
+                              setFormCategory(
+                                e.target.value as
+                                  | 'rotina'
+                                  | 'prioridades'
+                                  | 'documentos'
+                                  | 'habitos',
+                              )
+                            }
+                            className="w-full text-xs h-8 border rounded-md px-2 bg-slate-50"
+                          >
+                            <option value="rotina">Rotina Diária</option>
+                            <option value="prioridades">Prioridades e Foco</option>
+                            <option value="documentos">Organização de Documentos</option>
+                            <option value="habitos">Estrutura Prática</option>
+                          </select>
+                        </div>
+                        <div>
+                          <Label className="text-[11px]">Tempo Disponível</Label>
+                          <select
+                            value={formTime}
+                            onChange={(e) =>
+                              setFormTime(e.target.value as '5m' | '10m' | '20m' | '45m')
+                            }
+                            className="w-full text-xs h-8 border rounded-md px-2 bg-slate-50"
+                          >
+                            <option value="5m">5 minutos</option>
+                            <option value="10m">10 minutos</option>
+                            <option value="20m">20 minutos</option>
+                            <option value="45m">45 minutos</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-[11px]">Objetivo Específico</Label>
+                        <Input
+                          placeholder="Ex.: Organizar meus recibos de despesas do mês"
+                          value={formObjective}
+                          onChange={(e) => setFormObjective(e.target.value)}
+                          className="text-xs h-8"
+                          required
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        size="sm"
+                        disabled={creatingPlan}
+                        className="text-xs bg-slate-900 text-white"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        {creatingPlan ? 'Processando...' : 'Gerar Plano com Biblioteca Revisável'}
+                      </Button>
+                    </form>
+                  )}
+
+                  {/* Lista de Planos do Usuário */}
+                  {plans.length > 0 && (
+                    <div className="space-y-3 pt-2">
+                      <div className="text-xs font-bold text-slate-900">
+                        Meus Planos ({plans.length})
+                      </div>
+                      <div className="space-y-2">
+                        {plans.map((p) => (
+                          <div
+                            key={p.id}
+                            className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-2"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-bold text-slate-900">
+                                {p.title} (v{p.version})
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleExportPdf(p.id)}
+                                className="text-[11px] h-7"
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                PDF
+                              </Button>
+                            </div>
+                            <p className="text-slate-600 text-[11px]">{p.strategySummary}</p>
+                            <div className="space-y-1 pt-1">
+                              {p.actionsChecklist.map((act) => (
+                                <button
+                                  key={act.id}
+                                  type="button"
+                                  onClick={() => handleToggleChecklist(p, act.id)}
+                                  className="w-full flex items-center gap-2 text-left hover:bg-slate-50 p-1 rounded"
+                                >
+                                  {act.done ? (
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                  ) : (
+                                    <Circle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                  )}
+                                  <span
+                                    className={
+                                      act.done
+                                        ? 'line-through text-slate-400 text-[11px]'
+                                        : 'text-slate-700 text-[11px]'
+                                    }
+                                  >
+                                    {act.text}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -599,10 +754,11 @@ export default function PilotOrganizacaoPage() {
                 <Clock className="w-4 h-4" aria-hidden="true" />
               </div>
               <h3 className="text-xs sm:text-sm font-semibold text-slate-900">
-                Direito Pago Confirmado
+                Pagamento Único por 21 Dias
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Preço e periodicidade ainda serão definidos formalmente pela equipe gestora.
+                Pagamento único por 21 dias de uso da ferramenta (vários planos), sem renovação e
+                sem promessa de hábito. Preço ainda será definido formalmente.
               </p>
             </div>
           </div>
@@ -690,8 +846,9 @@ export default function PilotOrganizacaoPage() {
                     <p className="text-xs text-slate-600 leading-relaxed">
                       Sua conta está conectada à área de membros. No entanto,{' '}
                       <strong>o mecanismo de contratação e liberação de acesso pago</strong> ainda
-                      está em fase de definição e preparação pela equipe técnica. O preço e a
-                      periodicidade do produto ainda serão divulgados.
+                      está em fase de definição e preparação pela equipe técnica. O produto opera
+                      como pagamento único por 21 dias de uso (vários planos, sem renovação). O
+                      preço ainda será divulgado nos canais oficiais.
                     </p>
                   </div>
                 </div>
@@ -731,9 +888,9 @@ export default function PilotOrganizacaoPage() {
             <li className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 shrink-0" />
               <span>
-                <strong>Preço e periodicidade a definir:</strong> Nenhuma condição comercial foi
-                estipulada de forma definitiva. Valores, planos e formas de pagamento serão
-                anunciados nos canais oficiais.
+                <strong>Pagamento único (21 dias de uso):</strong> Produto de pagamento único por 21
+                dias de uso da ferramenta (vários planos), sem renovação e sem promessa de hábito.
+                Valores e opções de planos serão anunciados nos canais oficiais.
               </span>
             </li>
             <li className="flex items-start gap-2">
@@ -748,7 +905,7 @@ export default function PilotOrganizacaoPage() {
 
         {/* Rodapé da página */}
         <footer className="pt-4 border-t border-slate-200 text-xs text-slate-500 space-y-2 text-center">
-          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.70</p>
+          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.71</p>
           <p className="text-[11px] text-slate-400">
             Ambiente exclusivo de visualização prévia da área paga.
           </p>

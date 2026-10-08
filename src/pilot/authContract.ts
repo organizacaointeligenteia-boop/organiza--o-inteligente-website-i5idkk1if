@@ -3,7 +3,7 @@
  *
  * Produto: Ferramenta de IA de Organização Inteligente.
  * Orientação do Proprietário: Produto pago separado do Kit, acessível pela área de membros
- * com login e direito de acesso pago confirmado. Preço e periodicidade ainda serão definidos.
+ * com login e direito de acesso pago confirmado. Pagamento único por 21 dias de uso (vários planos, sem renovação).
  *
  * Regras mandatórias:
  * 1. Negação por padrão (deny by default): todo estado que não seja explicitamente paid-active com evidência verificável é negado.
