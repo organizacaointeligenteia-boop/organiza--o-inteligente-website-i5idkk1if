@@ -42,9 +42,8 @@ export default function PilotOrganizacaoPage() {
 
   // Suporte à conexão com o backend isolado standalone
   const [standaloneUrlInput, setStandaloneUrlInput] = useState<string>(getStandaloneApiUrl())
-  const [standaloneClient, setStandaloneClient] = useState<StandaloneOiClient | null>(() => {
-    const url = getStandaloneApiUrl()
-    return url ? new StandaloneOiClient(url) : null
+  const [standaloneClient, setStandaloneClient] = useState<StandaloneOiClient>(() => {
+    return new StandaloneOiClient(getStandaloneApiUrl())
   })
   const [cycleStatus, setCycleStatus] = useState<OiCycleStatusResponse | null>(null)
   const [cycleLoading, setCycleLoading] = useState(false)
@@ -102,12 +101,14 @@ export default function PilotOrganizacaoPage() {
   const handleConnectEndpoint = (e: React.FormEvent) => {
     e.preventDefault()
     setCustomStandaloneApiUrl(standaloneUrlInput)
+    const client = new StandaloneOiClient(standaloneUrlInput.trim())
+    setStandaloneClient(client)
     if (standaloneUrlInput.trim()) {
-      const client = new StandaloneOiClient(standaloneUrlInput.trim())
-      setStandaloneClient(client)
       setActionMessage(`Endpoint isolado configurado: ${standaloneUrlInput.trim()}`)
+      if (client.getToken()) {
+        refreshCycle()
+      }
     } else {
-      setStandaloneClient(null)
       setCycleStatus(null)
       setPlans([])
       setActionMessage('Endpoint removido. Retornado ao modo fail-closed padrão.')
@@ -235,7 +236,7 @@ export default function PilotOrganizacaoPage() {
       user,
       entitlement: undefined, // fail closed: sem fonte real de entitlement no momento
     })
-  }, [isAuthenticated, user])
+  }, [isAuthenticated])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-slate-200">
@@ -264,16 +265,19 @@ export default function PilotOrganizacaoPage() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {loading ? (
-              <span className="text-xs text-slate-500">Verificando sessão...</span>
-            ) : isAuthenticated ? (
+            {standaloneClient.getCurrentUser() ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-600 hidden sm:inline truncate max-w-[200px]">
-                  {user?.email || 'Usuário logado'}
+                  {standaloneClient.getCurrentUser()?.email}
                 </span>
                 <button
                   type="button"
-                  onClick={signOut}
+                  onClick={async () => {
+                    await standaloneClient.logout()
+                    setCycleStatus(null)
+                    setPlans([])
+                    setActionMessage('Sessão encerrada com sucesso.')
+                  }}
                   className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
                   aria-label="Sair da sessão"
                 >
@@ -281,13 +285,35 @@ export default function PilotOrganizacaoPage() {
                   Sair
                 </button>
               </div>
+            ) : isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500 hidden sm:inline truncate max-w-[180px]">
+                  {user?.email}
+                </span>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2 py-1 rounded transition-colors mr-1"
+                >
+                  Sair Nuvem
+                </button>
+                <Link
+                  to="/piloto-organizacao/login"
+                  className="inline-flex items-center gap-1 text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-2.5 py-1.5 rounded-lg transition-colors"
+                >
+                  <LogIn className="w-3 h-3" />
+                  Login Isolado
+                </Link>
+              </div>
+            ) : loading ? (
+              <span className="text-xs text-slate-400">Verificando...</span>
             ) : (
               <Link
                 to="/piloto-organizacao/login"
                 className="inline-flex items-center gap-1.5 text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
               >
                 <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
-                Fazer login
+                Login do Membro
               </Link>
             )}
           </div>
@@ -787,8 +813,8 @@ export default function PilotOrganizacaoPage() {
               </span>
             </div>
 
-            {/* Caso 1: Usuário Anônimo (sem sessão) */}
-            {!isAuthenticated && (
+            {/* Caso 1: Usuário Anônimo (sem sessão no backend isolado) */}
+            {!standaloneClient.getCurrentUser() && (
               <div
                 role="region"
                 aria-label="Aviso de login necessário"
@@ -827,8 +853,8 @@ export default function PilotOrganizacaoPage() {
               </div>
             )}
 
-            {/* Caso 2: Usuário Autenticado, mas sem entitlement pago confirmado (fail-closed) */}
-            {isAuthenticated && (
+            {/* Caso 2: Usuário Autenticado no backend isolado */}
+            {Boolean(standaloneClient.getCurrentUser()) && (
               <div
                 role="region"
                 aria-label="Aviso de liberação em preparação"
@@ -841,7 +867,45 @@ export default function PilotOrganizacaoPage() {
                   />
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-slate-900">
-                      Conta autenticada: {user?.email || 'Membro'}
+                      Conta autenticada: {standaloneClient.getCurrentUser()?.email}
+                    </p>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Sua conta está conectada ao servidor local de membros. Status do ciclo:{' '}
+                      <strong>{cycleStatus?.status || 'consultando...'}</strong>. O produto opera
+                      como pagamento único por 21 dias de uso (vários planos, sem renovação e sem
+                      promessa de hábito).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 space-y-1">
+                  <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
+                    Situação da liberação:
+                  </div>
+                  <p className="text-slate-600 leading-relaxed">
+                    Sua conta está autenticada com segurança. Inicie seu ciclo para começar a gerar
+                    planos pela biblioteca editorial revisável.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Caso 3: Sessão no PocketBase compartilhado (fallback) */}
+            {!standaloneClient.getCurrentUser() && isAuthenticated && (
+              <div
+                role="region"
+                aria-label="Aviso de conta na nuvem"
+                className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4"
+              >
+                <div className="flex items-start gap-3">
+                  <FileCheck2
+                    className="w-5 h-5 text-blue-600 mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Conta autenticada (Nuvem): {user?.email || 'Membro'}
                     </p>
                     <p className="text-xs text-slate-600 leading-relaxed">
                       Sua conta está conectada à área de membros. No entanto,{' '}
@@ -905,7 +969,7 @@ export default function PilotOrganizacaoPage() {
 
         {/* Rodapé da página */}
         <footer className="pt-4 border-t border-slate-200 text-xs text-slate-500 space-y-2 text-center">
-          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.71</p>
+          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.72</p>
           <p className="text-[11px] text-slate-400">
             Ambiente exclusivo de visualização prévia da área paga.
           </p>

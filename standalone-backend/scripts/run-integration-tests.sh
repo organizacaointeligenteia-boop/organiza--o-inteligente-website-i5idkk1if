@@ -12,3 +12,11 @@ export OI_STANDALONE_URL="${OI_STANDALONE_URL:-http://127.0.0.1:8090}"
 export OI_KIWIFY_WEBHOOK_SECRET="${OI_KIWIFY_WEBHOOK_SECRET:-oi-kiwify-test-secret}"
 
 node "$DIR/scripts/run-integration-tests.mjs"
+TEST_EXIT_CODE=$?
+
+if [ $TEST_EXIT_CODE -ne 0 ]; then
+  echo "FALHA: A suíte de testes de integração falhou com código $TEST_EXIT_CODE."
+  exit $TEST_EXIT_CODE
+fi
+
+echo "Execução de testes finalizada com sucesso."

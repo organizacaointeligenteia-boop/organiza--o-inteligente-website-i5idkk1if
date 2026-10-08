@@ -3,6 +3,18 @@
  * Migração Standalone do PocketBase para a Ferramenta de IA da Organização Inteligente (OI).
  * Criada exclusivamente para o ambiente ISOLADO do proprietário.
  * NUNCA aplicar no PocketBase compartilhado.
+ *
+ * Segurança rígida:
+ * - oi_memberships: createRule, updateRule, deleteRule = null (cadastro/atualização somente por rotas server-side)
+ * - oi_orders: createRule, updateRule, deleteRule = null (somente webhook server-side)
+ * - oi_cycles: createRule, updateRule, deleteRule = null (somente rotas server-side)
+ * - oi_quotas: createRule, updateRule, deleteRule = null (somente rotas server-side)
+ * - oi_plans: listRule, viewRule, createRule, updateRule, deleteRule = null!
+ *     BLOQUEIO TOTAL DE CRUD DIRETO DE oi_plans. Leituras, edições, checklists e exportações
+ *     são 100% controladas por rotas server-side (/api/oi/plans/*) com verificação de dono,
+ *     impedindo vazamento ou escrita pós-expiração/revogação/purga.
+ * - oi_ai_audit: listRule, viewRule, createRule, updateRule, deleteRule = null (somente servidor)
+ * - oi_auth_tokens: tabela interna para tokens reais de verificação e recuperação com TTL e uso único.
  */
 
 migrate(
@@ -18,10 +30,6 @@ migrate(
         // Cliente autenticado pode ver seus próprios dados de membership
         listRule: "@request.auth.id != '' && id = @request.auth.id",
         viewRule: "@request.auth.id != '' && id = @request.auth.id",
-        // BLOQUEIO TOTAL DE CRUD DIRETO PELO CLIENTE:
-        // createRule: null -> impede criação direta via SDK/REST; cadastro SOMENTE via /api/oi/auth/signup com role='member' fixo no servidor.
-        // updateRule: null -> impede modificação direta de campos sensíveis (role, verified, tokenKey, email, etc.) pelo cliente.
-        // deleteRule: null -> impede deleção direta pelo cliente.
         createRule: null,
         updateRule: null,
         deleteRule: null,
@@ -42,7 +50,7 @@ migrate(
     }
 
     // 2. Criar coleção oi_orders (Compras / Pedidos Kiwify)
-    // CLIENTE NÃO TEM ESCRITA (create/update/delete null). Somente hooks/servidor escreve.
+    // CRUD direto bloqueado (regras nulas)
     let ordersCol
     try {
       ordersCol = app.findCollectionByNameOrId('oi_orders')
@@ -50,12 +58,11 @@ migrate(
       ordersCol = new Collection({
         name: 'oi_orders',
         type: 'base',
-        // Cliente autenticado pode listar/ver somente seus próprios pedidos
         listRule: "@request.auth.id != '' && member = @request.auth.id",
         viewRule: "@request.auth.id != '' && member = @request.auth.id",
-        createRule: null, // Sem escrita por cliente
-        updateRule: null, // Sem escrita por cliente
-        deleteRule: null, // Sem escrita por cliente
+        createRule: null,
+        updateRule: null,
+        deleteRule: null,
         fields: [
           { name: 'order_id', type: 'text', required: true },
           { name: 'product_id', type: 'text', required: true },
@@ -96,7 +103,7 @@ migrate(
     }
 
     // 3. Criar coleção oi_cycles (Ciclos de 21 dias de uso)
-    // CLIENTE NÃO TEM ESCRITA DIRETA (create/update/delete null). Alterações apenas via rotas controladas do servidor.
+    // CRUD direto bloqueado (regras nulas)
     let cyclesCol
     try {
       cyclesCol = app.findCollectionByNameOrId('oi_cycles')
@@ -104,8 +111,8 @@ migrate(
       cyclesCol = new Collection({
         name: 'oi_cycles',
         type: 'base',
-        listRule: "@request.auth.id != '' && member = @request.auth.id",
-        viewRule: "@request.auth.id != '' && member = @request.auth.id",
+        listRule: null,
+        viewRule: null,
         createRule: null,
         updateRule: null,
         deleteRule: null,
@@ -126,7 +133,7 @@ migrate(
             maxSelect: 1,
             cascadeDelete: false,
           },
-          { name: 'plan_id', type: 'text', required: true }, // ex.: "oi-21-standard"
+          { name: 'plan_id', type: 'text', required: true },
           {
             name: 'status',
             type: 'select',
@@ -135,10 +142,10 @@ migrate(
             required: true,
           },
           { name: 'approved_at', type: 'date', required: true },
-          { name: 'auto_start_at', type: 'date', required: true }, // approved_at + 7 dias
-          { name: 'started_at', type: 'date', required: false }, // preenchido quando inicia
-          { name: 'expires_at', type: 'date', required: false }, // started_at + 21 dias
-          { name: 'retention_until', type: 'date', required: false }, // expires_at + 30 dias
+          { name: 'auto_start_at', type: 'date', required: true },
+          { name: 'started_at', type: 'date', required: false },
+          { name: 'expires_at', type: 'date', required: false },
+          { name: 'retention_until', type: 'date', required: false },
           { name: 'revoked_at', type: 'date', required: false },
           { name: 'revocation_reason', type: 'text', required: false },
           { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
@@ -154,8 +161,7 @@ migrate(
     }
 
     // 4. Criar coleção oi_quotas (Controle estrito e atômico de cotas de IA)
-    // Até 5 criações/ajustes por dia e 50 por ciclo.
-    // CLIENTE NÃO TEM ESCRITA DIRETA.
+    // CRUD direto bloqueado (regras nulas)
     let quotasCol
     try {
       quotasCol = app.findCollectionByNameOrId('oi_quotas')
@@ -163,8 +169,8 @@ migrate(
       quotasCol = new Collection({
         name: 'oi_quotas',
         type: 'base',
-        listRule: "@request.auth.id != '' && member = @request.auth.id",
-        viewRule: "@request.auth.id != '' && member = @request.auth.id",
+        listRule: null,
+        viewRule: null,
         createRule: null,
         updateRule: null,
         deleteRule: null,
@@ -185,7 +191,7 @@ migrate(
             maxSelect: 1,
             cascadeDelete: true,
           },
-          { name: 'day_bucket', type: 'text', required: true }, // ex.: "2025-05-10" UTC
+          { name: 'day_bucket', type: 'text', required: true },
           { name: 'daily_used', type: 'number', required: true },
           { name: 'cycle_used', type: 'number', required: true },
           { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
@@ -199,9 +205,11 @@ migrate(
       app.save(quotasCol)
     }
 
-    // 5. Criar coleção oi_plans (Planos de Organização gerados e editáveis)
-    // Dono pode ler seus planos. Criação e ajuste são feitos via endpoint do servidor para contabilizar cota.
-    // Edição direta de campos de checklist/status é permitida para o dono sem chamar IA.
+    // 5. Criar coleção oi_plans (Planos de Organização)
+    // CRUD direto BLOQUEADO TOTALMENTE (regras nulas):
+    // Listar, ver, criar, atualizar e deletar somente via endpoints autenticados do servidor.
+    // Isso impede que um membro leia planos após purga/revogação, edite após expiração,
+    // ou tente alterar cycle, member ou ai_meta por SDK direto.
     let plansCol
     try {
       plansCol = app.findCollectionByNameOrId('oi_plans')
@@ -209,11 +217,11 @@ migrate(
       plansCol = new Collection({
         name: 'oi_plans',
         type: 'base',
-        listRule: "@request.auth.id != '' && member = @request.auth.id",
-        viewRule: "@request.auth.id != '' && member = @request.auth.id",
-        createRule: null, // Criação somente via endpoint /api/oi/plans/create (para deduzir cota)
-        updateRule: "@request.auth.id != '' && member = @request.auth.id", // Edição de checklist/notas pelo dono (não chama IA)
-        deleteRule: "@request.auth.id != '' && member = @request.auth.id",
+        listRule: null,
+        viewRule: null,
+        createRule: null,
+        updateRule: null,
+        deleteRule: null,
         fields: [
           {
             name: 'member',
@@ -235,7 +243,7 @@ migrate(
           {
             name: 'category',
             type: 'select',
-            values: ['rotina', 'prioridades', 'documentos', 'organizacao'],
+            values: ['rotina', 'prioridades', 'documentos', 'organizacao', 'habitos'],
             maxSelect: 1,
             required: true,
           },
@@ -257,10 +265,10 @@ migrate(
           { name: 'target_deadline', type: 'text', required: false },
           { name: 'version', type: 'number', required: true },
           { name: 'parent_plan_id', type: 'text', required: false },
-          { name: 'model_key', type: 'text', required: true }, // 'priorities' | 'week' | 'steps'
+          { name: 'model_key', type: 'text', required: true },
           { name: 'strategy_summary', type: 'text', required: true },
-          { name: 'actions_checklist', type: 'json', required: true }, // Array de { id, text, priority, deadline, done }
-          { name: 'ai_meta', type: 'json', required: false }, // { provider: 'jev'|'manual', latency_ms, tokens, confidence }
+          { name: 'actions_checklist', type: 'json', required: true },
+          { name: 'ai_meta', type: 'json', required: false },
           { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
           { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
         ],
@@ -273,8 +281,8 @@ migrate(
       app.save(plansCol)
     }
 
-    // 6. Criar coleção oi_ai_audit (Auditoria de chamadas de IA e medição de consumo)
-    // Apenas servidor grava e lê.
+    // 6. Criar coleção oi_ai_audit (Auditoria de IA e medição de consumo)
+    // Servidor apenas
     let auditCol
     try {
       auditCol = app.findCollectionByNameOrId('oi_ai_audit')
@@ -304,13 +312,13 @@ migrate(
             maxSelect: 1,
             cascadeDelete: false,
           },
-          { name: 'provider', type: 'text', required: true }, // 'jev-systemone' | 'manual-fallback'
+          { name: 'provider', type: 'text', required: true },
           { name: 'endpoint', type: 'text', required: true },
           { name: 'latency_ms', type: 'number', required: true },
           { name: 'success', type: 'bool', required: true },
           { name: 'input_tokens', type: 'number', required: false },
           { name: 'output_tokens', type: 'number', required: false },
-          { name: 'cost_measured', type: 'number', required: false }, // nulo se preço não configurado; nunca inventar custo
+          { name: 'cost_measured', type: 'number', required: false },
           { name: 'error_message', type: 'text', required: false },
           { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
           { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
@@ -319,9 +327,55 @@ migrate(
       })
       app.save(auditCol)
     }
+
+    // 7. Criar coleção oi_auth_tokens (Tokens de uso único para Verificação de Conta e Reset de Senha)
+    // Totalmente protegida no servidor (list/view/create/update/delete nulos)
+    let tokensCol
+    try {
+      tokensCol = app.findCollectionByNameOrId('oi_auth_tokens')
+    } catch (_) {
+      tokensCol = new Collection({
+        name: 'oi_auth_tokens',
+        type: 'base',
+        listRule: null,
+        viewRule: null,
+        createRule: null,
+        updateRule: null,
+        deleteRule: null,
+        fields: [
+          {
+            name: 'member',
+            type: 'relation',
+            collectionId: membershipsCol.id,
+            required: true,
+            maxSelect: 1,
+            cascadeDelete: true,
+          },
+          { name: 'email', type: 'email', required: true },
+          {
+            name: 'type',
+            type: 'select',
+            values: ['verify_email', 'reset_password'],
+            maxSelect: 1,
+            required: true,
+          },
+          { name: 'token', type: 'text', required: true },
+          { name: 'expires_at', type: 'date', required: true },
+          { name: 'used_at', type: 'date', required: false },
+          { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
+          { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
+        ],
+        indexes: [
+          'CREATE UNIQUE INDEX idx_oi_auth_tokens_token ON oi_auth_tokens (token)',
+          'CREATE INDEX idx_oi_auth_tokens_email_type ON oi_auth_tokens (email, type)',
+        ],
+      })
+      app.save(tokensCol)
+    }
   },
   (app) => {
     const toDelete = [
+      'oi_auth_tokens',
       'oi_ai_audit',
       'oi_plans',
       'oi_quotas',

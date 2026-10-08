@@ -43,7 +43,7 @@ const sortedKeys = Object.keys(filesMap).sort()
 console.log(`Lendo diretório standalone-backend/: encontrados ${sortedKeys.length} arquivos.`)
 
 const jsonPayload = {
-  version: '0.0.71',
+  version: '0.0.72',
   generatedAt: new Date().toISOString(),
   totalFiles: sortedKeys.length,
   files: filesMap,

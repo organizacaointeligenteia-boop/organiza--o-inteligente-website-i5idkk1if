@@ -12,10 +12,11 @@ Este pacote contém o backend completo e isolado para execução LOCAL e control
   - `1740000001_create_oi_schema.js`: Criação das coleções `oi_memberships` (auth), `oi_orders`, `oi_cycles`, `oi_quotas`, `oi_plans` e `oi_ai_audit`.
   - `1740000002_seed_standalone_demo.js`: Seed idempotente de admin sintético e dois usuários sintéticos para testes.
 - `pb_hooks/`:
-  - `oi_webhook_kiwify.js`: Webhook autenticado com token, correlação de produto e conta, prevenção de ressurreição após refund/chargeback, ignorando compras do Kit.
-  - `oi_cycle_routes.js`: Gestão atômica do ciclo de 21 dias (`GET /api/oi/cycle/status`, `POST /api/oi/cycle/start`), regras de expiração e expurgo após 30 dias.
-  - `oi_plans_routes.js`: Criação e ajuste de planos (`POST /api/oi/plans/create`, `POST /api/oi/plans/adjust`), controle de cotas (5/dia e 50/ciclo), integração oficial Jev (`/v1/systemone`) ou modo manual honesto, e exportação segura de PDF (`GET /api/oi/plans/export-pdf`).
-  - `oi_auth_routes.js`: Rotas complementares de cadastro com allowlist estrita e role='member' fixo, atualização segura de perfil e reset local sem envio real de emails.
+  - `oi_webhook_kiwify.pb.js`: Webhook autenticado com token, correlação de produto e conta, tombstone de refund pré-aprovação, prevenção de ressurreição e ciclo ativo que não é estendido por nova compra.
+  - `oi_cycle_routes.pb.js`: Gestão atômica do ciclo de 21 dias com transação (`GET /api/oi/cycle/status`, `POST /api/oi/cycle/start`), expurgo COMPLETO de dados de planos após 30 dias da expiração. Header `x-oi-test-time-ms` foi REMOVIDO (clock exclusivamente do servidor local).
+  - `oi_plans_routes.pb.js`: Criação, ajuste, listagem e atualização controlada de planos (`POST /api/oi/plans/create`, `POST /api/oi/plans/adjust`, `GET /api/oi/plans/list`, `PATCH /api/oi/plans/update`), bloqueio TOTAL de CRUD direto em `oi_plans`, controle atômico de cotas (5/dia e 50/ciclo) fora de chamadas de rede, e exportação de PDF (`GET /api/oi/plans/export-pdf`) com UTF-8 e acentos em português.
+  - `oi_auth_routes.pb.js`: Rotas complementares de autenticação: cadastro com `verified=false` e `role='member'` fixo, verificação com token de uso único com TTL (`POST /api/oi/auth/verify-email`), login estrito com `verified=true`, reset com inbox local privado (`pb_data/local_inbox/emails.log`), logout com invalidação de sessão e rotação de `tokenKey`.
+*Nota crítica: arquivos terminam em `.pb.js` para garantir carregamento automático no PocketBase v0.36+ / v0.40.5.*
 - `config/`: Configurações e parâmetros operacionais (pagamento único por 21 dias, sem renovação).
 - `scripts/`: Scripts para inicialização (`run-local.sh`, `run-local.bat`) e testes de integração HTTP reais (`run-integration-tests.sh`, `run-integration-tests.mjs`).
 - `fixtures/`: Payloads sintéticos de teste para simulação Kiwify e Jev.

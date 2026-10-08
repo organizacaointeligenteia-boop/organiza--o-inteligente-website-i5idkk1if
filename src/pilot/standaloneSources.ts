@@ -20,10 +20,10 @@ import readmeContent from '../../standalone-backend/README.md?raw'
 import configContent from '../../standalone-backend/config/standalone.config.json?raw'
 import kiwifyEventsContent from '../../standalone-backend/fixtures/kiwifyEvents.json?raw'
 import syntheticSuiteContent from '../../standalone-backend/fixtures/syntheticTestSuite.json?raw'
-import authRoutesContent from '../../standalone-backend/pb_hooks/oi_auth_routes.js?raw'
-import cycleRoutesContent from '../../standalone-backend/pb_hooks/oi_cycle_routes.js?raw'
-import plansRoutesContent from '../../standalone-backend/pb_hooks/oi_plans_routes.js?raw'
-import webhookKiwifyContent from '../../standalone-backend/pb_hooks/oi_webhook_kiwify.js?raw'
+import authRoutesContent from '../../standalone-backend/pb_hooks/oi_auth_routes.pb.js?raw'
+import cycleRoutesContent from '../../standalone-backend/pb_hooks/oi_cycle_routes.pb.js?raw'
+import plansRoutesContent from '../../standalone-backend/pb_hooks/oi_plans_routes.pb.js?raw'
+import webhookKiwifyContent from '../../standalone-backend/pb_hooks/oi_webhook_kiwify.pb.js?raw'
 import schemaMigrationContent from '../../standalone-backend/pb_migrations/1740000001_create_oi_schema.js?raw'
 import seedMigrationContent from '../../standalone-backend/pb_migrations/1740000002_seed_standalone_demo.js?raw'
 import runLocalShContent from '../../standalone-backend/scripts/run-local.sh?raw'
@@ -36,10 +36,10 @@ const standaloneFilesMap: Record<string, string> = {
   'config/standalone.config.json': configContent,
   'fixtures/kiwifyEvents.json': kiwifyEventsContent,
   'fixtures/syntheticTestSuite.json': syntheticSuiteContent,
-  'pb_hooks/oi_auth_routes.js': authRoutesContent,
-  'pb_hooks/oi_cycle_routes.js': cycleRoutesContent,
-  'pb_hooks/oi_plans_routes.js': plansRoutesContent,
-  'pb_hooks/oi_webhook_kiwify.js': webhookKiwifyContent,
+  'pb_hooks/oi_auth_routes.pb.js': authRoutesContent,
+  'pb_hooks/oi_cycle_routes.pb.js': cycleRoutesContent,
+  'pb_hooks/oi_plans_routes.pb.js': plansRoutesContent,
+  'pb_hooks/oi_webhook_kiwify.pb.js': webhookKiwifyContent,
   'pb_migrations/1740000001_create_oi_schema.js': schemaMigrationContent,
   'pb_migrations/1740000002_seed_standalone_demo.js': seedMigrationContent,
   'scripts/run-local.sh': runLocalShContent,
@@ -49,8 +49,8 @@ const standaloneFilesMap: Record<string, string> = {
 }
 
 export const STANDALONE_PACKAGE_BUNDLE: StandalonePackageBundle = {
-  version: '0.0.71',
-  generatedAt: '2025-05-10T00:00:00.000Z',
+  version: '0.0.72',
+  generatedAt: new Date().toISOString(),
   totalFiles: Object.keys(standaloneFilesMap).length,
   files: standaloneFilesMap,
 }

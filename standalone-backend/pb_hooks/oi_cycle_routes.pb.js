@@ -1,19 +1,17 @@
-// standalone-backend/pb_hooks/oi_cycle_routes.js
+// standalone-backend/pb_hooks/oi_cycle_routes.pb.js
 /**
  * Rotas de Gestão do Ciclo de 21 Dias da Ferramenta OI.
+ * Extensão .pb.js obrigatória para carregamento automático no PocketBase v0.36+ / v0.40.5.
+ *
  * Rotas:
  * 1. GET /api/oi/cycle/status -> Consulta o estado exato do ciclo ativo/recente do membro logado
- * 2. POST /api/oi/cycle/start -> Inicia atomicamente os 21 dias uma única vez ("Começar meus 21 dias")
+ * 2. POST /api/oi/cycle/start -> Inicia atomicamente os 21 dias uma única vez com transação e lock
  *
- * Regras do Ciclo:
- * - Compra confirmada -> 7 dias para iniciar.
- * - Botão "Começar meus 21 dias" inicia atomicamente uma única vez:
- *     started_at = now, expires_at = started_at + 21 dias, retention_until = expires_at + 30 dias.
- * - Se não iniciar e passar de auto_start_at (approved_at + 7 dias):
- *     started_at = auto_start_at, expires_at = started_at + 21 dias, retention_until = expires_at + 30 dias.
- * - Se UTC atual > expires_at: status é "expired".
- * - Se expirado há mais de 30 dias (UTC atual > retention_until): conteúdo dos planos é purgado (status="purged").
- * - Durante os 30 dias de expiração: somente consulta e export dos resultados já gerados.
+ * Regras:
+ * - REMOÇÃO TOTAL do header x-oi-test-time-ms controlado pelo cliente.
+ * - Clock de teste APENAS via env/arquivo privado local: OI_TEST_NOW_MS ou arquivo pb_data/test_clock_ms.txt.
+ * - Início atômico via $app.runInTransaction impedindo condições de corrida.
+ * - Expurgo total: após retention_until (30 dias de expiração), limpa título, objetivo, strategy_summary, actions_checklist, ai_meta e dados.
  */
 
 routerAdd(
@@ -23,6 +21,10 @@ routerAdd(
     const authRecord = e.auth
     if (!authRecord || authRecord.collection().name !== 'oi_memberships') {
       return e.json(401, { error: 'Autenticação de membro necessária' })
+    }
+
+    if (!authRecord.verified()) {
+      return e.json(403, { error: 'Conta de membro não verificada. Acesso bloqueado.' })
     }
 
     const memberId = authRecord.id
@@ -56,14 +58,21 @@ routerAdd(
     let expiresAtStr = cycle.getString('expires_at')
     let retentionUntilStr = cycle.getString('retention_until')
 
-    // Clock UTC do servidor (com suporte opcional a mock de relógio via header de testes locais)
+    // Clock estrito do servidor: nenhum header do cliente é aceito!
     let nowMs = Date.now()
-    const testTimeHeader = e.requestInfo().headers['x-oi-test-time-ms']
-    if (testTimeHeader && $os.getenv('OI_ALLOW_TEST_CLOCK') === 'true') {
-      const parsed = Number(testTimeHeader)
-      if (!isNaN(parsed) && parsed > 0) {
-        nowMs = parsed
-      }
+    const envTestClock = $os.getenv('OI_TEST_NOW_MS')
+    if (envTestClock) {
+      const parsed = Number(envTestClock)
+      if (!isNaN(parsed) && parsed > 0) nowMs = parsed
+    } else {
+      // Ou arquivo privado do servidor pb_data/test_clock_ms.txt
+      try {
+        const fileContent = $os.readFile('pb_data/test_clock_ms.txt')
+        if (fileContent) {
+          const parsed = Number(String(fileContent).trim())
+          if (!isNaN(parsed) && parsed > 0) nowMs = parsed
+        }
+      } catch (_) {}
     }
 
     const twentyOneDaysMs = 21 * 24 * 60 * 60 * 1000
@@ -73,7 +82,6 @@ routerAdd(
     if (status === 'waiting_start') {
       const autoStartMs = Date.parse(autoStartAtStr)
       if (!isNaN(autoStartMs) && nowMs >= autoStartMs) {
-        // Início automático!
         status = 'active'
         const startedMs = autoStartMs
         const expiresMs = startedMs + twentyOneDaysMs
@@ -105,25 +113,28 @@ routerAdd(
     if (status === 'expired' && retentionUntilStr) {
       const retentionMs = Date.parse(retentionUntilStr)
       if (!isNaN(retentionMs) && nowMs >= retentionMs) {
-        // Purgar conteúdo de planos do ciclo, preservando a conta e o registro da compra
         status = 'purged'
         cycle.set('status', 'purged')
         $app.save(cycle)
 
-        // Purgar textos de planos
+        // Expurgo COMPLETO de todos os dados dos planos do ciclo:
+        // título, objetivo, sumário, checklists, notas, metadados
         try {
           const plans = $app.findRecordsByFilter(
             'oi_plans',
             "cycle = '" + cycleId + "'",
             '-created',
-            100,
+            500,
             0,
           )
           for (const p of plans) {
-            p.set('strategy_summary', '[CONTEÚDO PURGADO APÓS 30 DIAS DA EXPIRAÇÃO DO CICLO]')
+            p.set('title', '[PLANO EXPURGADO APÓS 30 DIAS]')
+            p.set('objective', '[EXPURGADO]')
+            p.set('strategy_summary', '[CONTEÚDO EXPURGADO APÓS 30 DIAS DA EXPIRAÇÃO DO CICLO]')
             p.set('actions_checklist', [
-              { id: 'purged', text: 'Conteúdo do plano arquivado e purgado.', done: true },
+              { id: 'purged', text: 'Conteúdo purgado por política de retenção.', done: true },
             ])
+            p.set('ai_meta', { purged: true })
             $app.save(p)
           }
         } catch (_) {}
@@ -154,7 +165,6 @@ routerAdd(
 
     try {
       const quotaRec = $app.findFirstRecordByData('oi_quotas', 'cycle', cycleId)
-      // Se for o mesmo dia
       if (quotaRec.getString('day_bucket') === todayBucket) {
         dailyUsed = quotaRec.getInt('daily_used')
       }
@@ -188,7 +198,7 @@ routerAdd(
 )
 
 /**
- * Iniciar atomicamente o ciclo de 21 dias
+ * Iniciar atomicamente o ciclo de 21 dias com transação
  */
 routerAdd(
   'POST',
@@ -199,60 +209,75 @@ routerAdd(
       return e.json(401, { error: 'Autenticação de membro necessária' })
     }
 
+    if (!authRecord.verified()) {
+      return e.json(403, { error: 'Conta não verificada. Ação bloqueada.' })
+    }
+
     const memberId = authRecord.id
-    let cycles = []
-    try {
-      cycles = $app.findRecordsByFilter(
-        'oi_cycles',
-        "member = '" + memberId + "' && status = 'waiting_start'",
-        '-created',
-        1,
-        0,
-      )
-    } catch (_) {
-      cycles = []
-    }
+    let cycleId = ''
+    let startedIso = ''
+    let expiresIso = ''
+    let retentionIso = ''
 
-    if (cycles.length === 0) {
-      return e.json(400, {
-        error:
-          'Nenhum ciclo aguardando início para este membro. O ciclo pode já ter sido iniciado ou não existir.',
-      })
-    }
-
-    const cycle = cycles[0]
-
+    // Clock estrito do servidor
     let nowMs = Date.now()
-    const testTimeHeader = e.requestInfo().headers['x-oi-test-time-ms']
-    if (testTimeHeader && $os.getenv('OI_ALLOW_TEST_CLOCK') === 'true') {
-      const parsed = Number(testTimeHeader)
-      if (!isNaN(parsed) && parsed > 0) {
-        nowMs = parsed
-      }
+    const envTestClock = $os.getenv('OI_TEST_NOW_MS')
+    if (envTestClock) {
+      const parsed = Number(envTestClock)
+      if (!isNaN(parsed) && parsed > 0) nowMs = parsed
+    } else {
+      try {
+        const fileContent = $os.readFile('pb_data/test_clock_ms.txt')
+        if (fileContent) {
+          const parsed = Number(String(fileContent).trim())
+          if (!isNaN(parsed) && parsed > 0) nowMs = parsed
+        }
+      } catch (_) {}
     }
 
     const twentyOneDaysMs = 21 * 24 * 60 * 60 * 1000
     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
 
-    const startedIso = new Date(nowMs).toISOString().replace('T', ' ').substring(0, 19)
-    const expiresIso = new Date(nowMs + twentyOneDaysMs)
-      .toISOString()
-      .replace('T', ' ')
-      .substring(0, 19)
-    const retentionIso = new Date(nowMs + twentyOneDaysMs + thirtyDaysMs)
-      .toISOString()
-      .replace('T', ' ')
-      .substring(0, 19)
+    try {
+      $app.runInTransaction((txApp) => {
+        const cycles = txApp.findRecordsByFilter(
+          'oi_cycles',
+          "member = '" + memberId + "' && status = 'waiting_start'",
+          '-created',
+          1,
+          0,
+        )
 
-    cycle.set('status', 'active')
-    cycle.set('started_at', startedIso)
-    cycle.set('expires_at', expiresIso)
-    cycle.set('retention_until', retentionIso)
-    $app.save(cycle)
+        if (cycles.length === 0) {
+          throw new Error('Nenhum ciclo aguardando início para este membro.')
+        }
+
+        const cycle = cycles[0]
+        cycleId = cycle.id
+
+        startedIso = new Date(nowMs).toISOString().replace('T', ' ').substring(0, 19)
+        expiresIso = new Date(nowMs + twentyOneDaysMs)
+          .toISOString()
+          .replace('T', ' ')
+          .substring(0, 19)
+        retentionIso = new Date(nowMs + twentyOneDaysMs + thirtyDaysMs)
+          .toISOString()
+          .replace('T', ' ')
+          .substring(0, 19)
+
+        cycle.set('status', 'active')
+        cycle.set('started_at', startedIso)
+        cycle.set('expires_at', expiresIso)
+        cycle.set('retention_until', retentionIso)
+        txApp.save(cycle)
+      })
+    } catch (err) {
+      return e.json(400, { error: err.message || String(err) })
+    }
 
     return e.json(200, {
       success: true,
-      cycleId: cycle.id,
+      cycleId: cycleId,
       status: 'active',
       startedAt: startedIso,
       expiresAt: expiresIso,

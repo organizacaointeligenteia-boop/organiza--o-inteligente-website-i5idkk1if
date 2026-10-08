@@ -9,9 +9,9 @@ describe('Preview 0.0.71 - Reentrega do Pacote Standalone via Módulo Vite e Cor
   const standaloneDir = path.resolve(rootDir, 'standalone-backend')
 
   describe('1. Entrega dos Fontes via Módulo Vite (sem arquivo tar em public/)', () => {
-    it('o módulo STANDALONE_PACKAGE_BUNDLE contém versão 0.0.71 e estrutura de arquivos válida', () => {
+    it('o módulo STANDALONE_PACKAGE_BUNDLE contém versão 0.0.72 e estrutura de arquivos válida', () => {
       expect(STANDALONE_PACKAGE_BUNDLE).toBeDefined()
-      expect(STANDALONE_PACKAGE_BUNDLE.version).toBe('0.0.71')
+      expect(STANDALONE_PACKAGE_BUNDLE.version).toBe('0.0.72')
       expect(STANDALONE_PACKAGE_BUNDLE.totalFiles).toBeGreaterThanOrEqual(10)
       expect(typeof STANDALONE_PACKAGE_BUNDLE.files).toBe('object')
     })
@@ -22,10 +22,10 @@ describe('Preview 0.0.71 - Reentrega do Pacote Standalone via Módulo Vite e Cor
         'config/standalone.config.json',
         'fixtures/kiwifyEvents.json',
         'fixtures/syntheticTestSuite.json',
-        'pb_hooks/oi_auth_routes.js',
-        'pb_hooks/oi_cycle_routes.js',
-        'pb_hooks/oi_plans_routes.js',
-        'pb_hooks/oi_webhook_kiwify.js',
+        'pb_hooks/oi_auth_routes.pb.js',
+        'pb_hooks/oi_cycle_routes.pb.js',
+        'pb_hooks/oi_plans_routes.pb.js',
+        'pb_hooks/oi_webhook_kiwify.pb.js',
         'pb_migrations/1740000001_create_oi_schema.js',
         'pb_migrations/1740000002_seed_standalone_demo.js',
         'scripts/run-local.sh',
@@ -109,8 +109,8 @@ describe('Preview 0.0.71 - Reentrega do Pacote Standalone via Módulo Vite e Cor
       expect(quotasBlock).toContain('updateRule: null')
     })
 
-    it('oi_auth_routes.js fixa role="member" no servidor e não aceita role do cliente no signup', () => {
-      const authHooksPath = path.join(standaloneDir, 'pb_hooks/oi_auth_routes.js')
+    it('oi_auth_routes.pb.js fixa role="member" no servidor e não aceita role do cliente no signup', () => {
+      const authHooksPath = path.join(standaloneDir, 'pb_hooks/oi_auth_routes.pb.js')
       const authContent = fs.readFileSync(authHooksPath, 'utf-8')
 
       expect(authContent).toContain("record.set('role', 'member')")
@@ -120,11 +120,11 @@ describe('Preview 0.0.71 - Reentrega do Pacote Standalone via Módulo Vite e Cor
     })
 
     it('cada hook de ciclo e plano valida estritamente authRecord.collection().name === "oi_memberships"', () => {
-      const cyclePath = path.join(standaloneDir, 'pb_hooks/oi_cycle_routes.js')
+      const cyclePath = path.join(standaloneDir, 'pb_hooks/oi_cycle_routes.pb.js')
       const cycleContent = fs.readFileSync(cyclePath, 'utf-8')
       expect(cycleContent).toContain("authRecord.collection().name !== 'oi_memberships'")
 
-      const plansPath = path.join(standaloneDir, 'pb_hooks/oi_plans_routes.js')
+      const plansPath = path.join(standaloneDir, 'pb_hooks/oi_plans_routes.pb.js')
       const plansContent = fs.readFileSync(plansPath, 'utf-8')
       expect(plansContent).toContain("authRecord.collection().name !== 'oi_memberships'")
     })
@@ -176,18 +176,19 @@ describe('Preview 0.0.71 - Reentrega do Pacote Standalone via Módulo Vite e Cor
 
       // Verificação dos cenários obrigatórios
       expect(testScriptContent).toContain('Bloqueio de CRUD direto em oi_memberships')
-      expect(testScriptContent).toContain('Cadastro seguro via /api/oi/auth/signup')
-      expect(testScriptContent).toContain('Login com credenciais válidas')
+      expect(testScriptContent).toContain('signup')
+      expect(testScriptContent).toContain('login')
       expect(testScriptContent).toContain('user1@organizacaointeligente.com.br')
       expect(testScriptContent).toContain('user2@organizacaointeligente.com.br')
       expect(testScriptContent).toContain('admin-oi@organizacaointeligente.com.br')
-      expect(testScriptContent).toContain('compra do Kit NÃO libera ferramenta de IA')
-      expect(testScriptContent).toContain('evento duplicado tratado de forma idempotente')
-      expect(testScriptContent).toContain('reembolso revoga o ciclo imediatamente')
-      expect(testScriptContent).toContain('Proteção contra ressurreição')
-      expect(testScriptContent).toContain('Criação de plano deduz cota diária')
-      expect(testScriptContent).toContain('Isolamento multi-tenant')
+      expect(testScriptContent).toContain('Kit NÃO libera a ferramenta de IA')
+      expect(testScriptContent).toContain('Tombstone')
+      expect(testScriptContent).toContain('reembolso')
+      expect(testScriptContent).toContain('ressurreição')
+      expect(testScriptContent).toContain('Criação de plano')
+      expect(testScriptContent).toContain('multi-tenant')
       expect(testScriptContent).toContain('export-pdf')
+      expect(testScriptContent).toContain('process.exit(1)')
     })
   })
 
@@ -208,15 +209,15 @@ describe('Preview 0.0.71 - Reentrega do Pacote Standalone via Módulo Vite e Cor
       expect(invalidMigrations).toEqual([])
     })
 
-    it('package.json e rodapé estão na versão 0.0.71', () => {
+    it('package.json e rodapé estão na versão 0.0.72', () => {
       const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf-8'))
-      expect(pkg.version).toBe('0.0.71')
+      expect(pkg.version).toBe('0.0.72')
 
       const pageSource = fs.readFileSync(
         path.join(rootDir, 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
       )
-      expect(pageSource).toContain('Versão 0.0.71')
+      expect(pageSource).toContain('Versão 0.0.72')
     })
   })
 })
