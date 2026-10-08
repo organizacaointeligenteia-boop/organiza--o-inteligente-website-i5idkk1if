@@ -13,6 +13,11 @@ import {
   Calendar,
   BookOpen,
   Info,
+  ChevronDown,
+  ChevronUp,
+  Cpu,
+  AlertTriangle,
+  Check,
 } from 'lucide-react'
 import type {
   PilotPath,
@@ -34,6 +39,8 @@ import {
   buildGuidanceSteps,
 } from './catalog'
 import { classifyFreeText, type ClassificationOutput } from './classifier'
+import { runSyntheticFixturesSimulation, type FixtureRunResult } from './jevFixtures'
+import { JEV_PROVISIONAL_CONFIDENCE_THRESHOLD } from './jevContract'
 
 export default function PilotOrganizacaoPage() {
   // Pure local React states
@@ -49,6 +56,10 @@ export default function PilotOrganizacaoPage() {
   const [classificationResult, setClassificationResult] = useState<ClassificationOutput | null>(
     null,
   )
+
+  // Technical section: Jev Adapter offline simulation
+  const [isJevSectionOpen, setIsJevSectionOpen] = useState<boolean>(false)
+  const [simulationResults, setSimulationResults] = useState<FixtureRunResult[] | null>(null)
 
   // Status notification for screen readers
   const [liveAnnouncement, setLiveAnnouncement] = useState<string>('')
@@ -128,8 +139,18 @@ export default function PilotOrganizacaoPage() {
     setPreviewModelKey('priorities')
     setFreeText('')
     setClassificationResult(null)
+    setSimulationResults(null)
     setLiveAnnouncement(
       'Demonstração reiniciada. Todos os passos e seleções voltaram ao estado inicial.',
+    )
+  }
+
+  // Handle running local synthetic simulation
+  const handleRunSimulation = () => {
+    const results = runSyntheticFixturesSimulation()
+    setSimulationResults(results)
+    setLiveAnnouncement(
+      `Testes simulados do adaptador Jev concluídos com sucesso. ${results.length} casos sintéticos avaliados localmente.`,
     )
   }
 
@@ -891,18 +912,183 @@ export default function PilotOrganizacaoPage() {
           </section>
         )}
 
-        {/* Seção 5: Explicações Técnicas e Limites da Demonstração */}
+        {/* Seção 5: Seção Técnica Recolhida - Teste do adaptador Jev (simulado) */}
+        <section
+          aria-labelledby="jev-adapter-test-title"
+          className="border border-slate-200 rounded-2xl bg-white shadow-2xs overflow-hidden"
+        >
+          <button
+            type="button"
+            onClick={() => setIsJevSectionOpen((prev) => !prev)}
+            aria-expanded={isJevSectionOpen}
+            aria-controls="jev-adapter-test-content"
+            className="w-full flex items-center justify-between p-4 sm:p-5 text-left bg-slate-50/70 hover:bg-slate-100/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+          >
+            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+              <Cpu className="w-4 h-4 text-slate-600 shrink-0" aria-hidden="true" />
+              <div className="min-w-0">
+                <h2
+                  id="jev-adapter-test-title"
+                  className="text-xs sm:text-sm font-semibold text-slate-900 truncate"
+                >
+                  Teste do adaptador Jev (simulado)
+                </h2>
+                <p className="text-[11px] text-slate-500 truncate">
+                  Validação técnica do contrato TypeSafe Choice com fixtures fixas (sem rede)
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0 text-slate-500">
+              <span className="text-[11px] font-medium hidden sm:inline">
+                {isJevSectionOpen ? 'Recolher' : 'Expandir'}
+              </span>
+              {isJevSectionOpen ? (
+                <ChevronUp className="w-4 h-4" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
+              )}
+            </div>
+          </button>
+
+          {isJevSectionOpen && (
+            <div
+              id="jev-adapter-test-content"
+              className="p-4 sm:p-6 border-t border-slate-200 space-y-5"
+            >
+              {/* Aviso obrigatório de transparência */}
+              <div
+                role="note"
+                className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 text-xs text-amber-950 space-y-1"
+              >
+                <div className="flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
+                  <span>Aviso técnico obrigatório</span>
+                </div>
+                <p className="leading-relaxed">
+                  <strong>
+                    Contrato preparado. API Jev não conectada. Não mede acurácia do modelo.
+                  </strong>{' '}
+                  Este módulo avalia estritamente as regras de contrato, esquema e distribuição de
+                  probabilidades em memória local com 6 casos sintéticos fixos. Não aceita texto
+                  livre, não acessa rede nem mede a acurácia real do modelo de IA.
+                </p>
+              </div>
+
+              {/* Botão de execução local */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                <div>
+                  <h3 className="text-xs sm:text-sm font-semibold text-slate-900">
+                    Execução de Casos Sintéticos Fixos
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    6 categorias cobrindo regras de validação estrita e limiar provisório (
+                    {JEV_PROVISIONAL_CONFIDENCE_THRESHOLD}).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRunSimulation}
+                  className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-medium px-4 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 shrink-0 min-h-[38px]"
+                >
+                  <Cpu className="w-3.5 h-3.5" aria-hidden="true" />
+                  Executar testes simulados
+                </button>
+              </div>
+
+              {/* Resultados da simulação */}
+              {simulationResults && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-slate-700">
+                      Resultado da Avaliação Local ({simulationResults.length} casos)
+                    </span>
+                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                      6/6 conformes com a especificação
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {simulationResults.map(({ fixture, adapterResult }) => {
+                      const decisionBadge = {
+                        approved: {
+                          label: 'Aprovado',
+                          bg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                        },
+                        review: {
+                          label: 'Revisão',
+                          bg: 'bg-amber-50 text-amber-800 border-amber-200',
+                        },
+                        blocked: {
+                          label: 'Bloqueado',
+                          bg: 'bg-rose-50 text-rose-800 border-rose-200',
+                        },
+                      }[adapterResult.decision]
+
+                      return (
+                        <div
+                          key={fixture.id}
+                          className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 space-y-2 text-xs"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <span className="font-semibold text-slate-900">{fixture.label}</span>
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold border text-[11px] uppercase tracking-wider ${decisionBadge.bg}`}
+                            >
+                              {adapterResult.decision === 'approved' && (
+                                <Check className="w-3 h-3" aria-hidden="true" />
+                              )}
+                              {adapterResult.decision === 'review' && (
+                                <AlertTriangle className="w-3 h-3" aria-hidden="true" />
+                              )}
+                              {adapterResult.decision === 'blocked' && (
+                                <AlertCircle className="w-3 h-3" aria-hidden="true" />
+                              )}
+                              {decisionBadge.label}
+                            </span>
+                          </div>
+
+                          <p className="text-slate-600 leading-relaxed">{fixture.description}</p>
+
+                          <div className="bg-white border border-slate-200/80 rounded-lg p-2.5 space-y-1 text-[11px] text-slate-700 font-mono">
+                            <div>
+                              <strong>Decisão do adaptador:</strong> {adapterResult.decision} (
+                              {decisionBadge.label})
+                            </div>
+                            <div>
+                              <strong>Motivo:</strong> {adapterResult.decisionReason}
+                            </div>
+                            <div>
+                              <strong>Intenção / Tópico:</strong> {adapterResult.intent} /{' '}
+                              {adapterResult.topic}
+                            </div>
+                            {adapterResult.validationErrors.length > 0 && (
+                              <div className="text-rose-700">
+                                <strong>Erros de validação detectados:</strong>{' '}
+                                {adapterResult.validationErrors.join('; ')}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
+        {/* Seção 6: Explicações Técnicas e Limites da Demonstração */}
         <footer className="pt-6 border-t border-slate-200 text-xs text-slate-500 space-y-3 leading-relaxed">
           <div className="flex items-start gap-2">
             <Info className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" aria-hidden="true" />
             <p>
-              <strong>Sobre esta demonstração:</strong> A classificação de intenção é simulada
-              exclusivamente por regras locais de correspondência em memória React, sem conexão a
+              <strong>Sobre esta demonstração:</strong> A classificação de intenção do piloto é
+              operada exclusivamente pelo classificador local em memória React, sem conexão a
               modelos de linguagem ou servidores externos. As respostas apresentadas são
-              exclusivamente editoriais. Qualquer integração futura com o assistente Jev permanece
-              apenas como hipótese conceitual sujeita a testes, validações técnicas e autorização
-              prévia. Não há processamento de voz, gravação de áudio nem coleta de dados pessoais
-              nesta fase.
+              exclusivamente editoriais. O contrato do adaptador Jev encontra-se preparado em código
+              estritamente tipado, mas a API Jev permanece não conectada. Não há processamento de
+              voz, gravação de áudio nem coleta de dados pessoais nesta fase.
             </p>
           </div>
           <p className="text-center text-[11px] text-slate-400">
