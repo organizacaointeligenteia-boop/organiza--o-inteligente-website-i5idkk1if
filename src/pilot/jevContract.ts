@@ -31,18 +31,33 @@ export interface TypeSafeChoiceQuestion<K extends string = string> {
 }
 
 /**
- * Pure request body sent to TypeSafe / Jev API.
- * Contains state, model, questions, and project envelope.
+ * Native request body sent to TypeSafe / Jev Choice API.
+ * Contains EXATAMENTE state, model, questions (sem project nem metadados extras).
+ * Note: 'project' is LOCAL brand-isolation metadata only and must NEVER leak into the native API protocol.
  */
-export interface JevClassificationRequest {
-  project: typeof JEV_PROJECT_ID
-  model: typeof JEV_MODEL_ID
+export interface TypeSafeRequestBody {
   state: string
+  model: typeof JEV_MODEL_ID
   questions: {
     intent: TypeSafeChoiceQuestion<JevIntentChoice>
     topic: TypeSafeChoiceQuestion<JevTopicChoice>
   }
 }
+
+/**
+ * Local request envelope wrapping native request with mandatory brand isolation metadata.
+ * 'project' is mandatory local metadata and not sent to the remote API.
+ */
+export interface JevRequestEnvelope {
+  project: typeof JEV_PROJECT_ID
+  request: TypeSafeRequestBody
+}
+
+/**
+ * Backwards compatibility alias for JevRequestEnvelope / local request typing.
+ * Prefer JevRequestEnvelope for local envelopes and TypeSafeRequestBody for native payloads.
+ */
+export type JevClassificationRequest = JevRequestEnvelope
 
 /**
  * TypeSafe Choice answer structure.
@@ -60,10 +75,10 @@ export interface TypeSafeUsage {
 }
 
 /**
- * Raw envelope returned by the TypeSafe / Jev service.
+ * Native raw response body returned by the TypeSafe / Jev service.
+ * Does NOT contain 'project' (project is local brand isolation metadata only).
  */
-export interface JevClassificationResponseRaw {
-  project?: string
+export interface TypeSafeResponseBodyRaw {
   model: string
   answers: {
     intent?: unknown
@@ -72,6 +87,20 @@ export interface JevClassificationResponseRaw {
   }
   usage?: TypeSafeUsage
 }
+
+/**
+ * Local response envelope wrapping native response with mandatory brand isolation metadata.
+ * 'project' is mandatory local metadata (never optional) used to verify namespace before evaluation.
+ */
+export interface JevResponseEnvelope {
+  project: typeof JEV_PROJECT_ID
+  response: TypeSafeResponseBodyRaw
+}
+
+/**
+ * Backwards compatibility alias for native raw response body.
+ */
+export type JevClassificationResponseRaw = TypeSafeResponseBodyRaw
 
 /**
  * Validated choice answer after strict type and mathematical integrity checks.

@@ -1,7 +1,7 @@
 import {
   JEV_PROJECT_ID,
   JEV_MODEL_ID,
-  type JevClassificationResponseRaw,
+  type JevResponseEnvelope,
   type JevAdapterResult,
 } from './jevContract'
 import { evaluateJevResponseEnvelope } from './jevAdapter'
@@ -18,7 +18,7 @@ export interface JevSyntheticFixture {
   label: string
   description: string
   simulatedInputSummary: string
-  rawResponse: JevClassificationResponseRaw | Record<string, unknown>
+  rawResponse: JevResponseEnvelope | Record<string, unknown>
   expectedDecision: 'approved' | 'review' | 'blocked'
 }
 
@@ -29,7 +29,7 @@ export interface JevSyntheticFixture {
  * (c) restricted misturado a rotina;
  * (d) enum inválido;
  * (e) probabilidades incoerentes;
- * (f) resposta de outra marca.
+ * (f) envelope de outra marca (project divergente / ausente).
  */
 export const JEV_SYNTHETIC_FIXTURES: readonly JevSyntheticFixture[] = [
   {
@@ -42,35 +42,37 @@ export const JEV_SYNTHETIC_FIXTURES: readonly JevSyntheticFixture[] = [
     expectedDecision: 'approved',
     rawResponse: {
       project: JEV_PROJECT_ID,
-      model: JEV_MODEL_ID,
-      answers: {
-        intent: {
-          type: 'choice',
-          choice: 'routine',
-          confidence: 0.92,
-          probabilities: {
-            routine: 0.92,
-            kit: 0.03,
-            guidance: 0.02,
-            unknown: 0.02,
-            restricted: 0.01,
+      response: {
+        model: JEV_MODEL_ID,
+        answers: {
+          intent: {
+            type: 'choice',
+            choice: 'routine',
+            confidence: 0.92,
+            probabilities: {
+              routine: 0.92,
+              kit: 0.03,
+              guidance: 0.02,
+              unknown: 0.02,
+              restricted: 0.01,
+            },
+          },
+          topic: {
+            type: 'choice',
+            choice: 'time',
+            confidence: 0.88,
+            probabilities: {
+              time: 0.88,
+              priorities: 0.06,
+              consistency: 0.04,
+              general: 0.02,
+            },
           },
         },
-        topic: {
-          type: 'choice',
-          choice: 'time',
-          confidence: 0.88,
-          probabilities: {
-            time: 0.88,
-            priorities: 0.06,
-            consistency: 0.04,
-            general: 0.02,
-          },
+        usage: {
+          input_tokens: 180,
+          output_tokens: 28,
         },
-      },
-      usage: {
-        input_tokens: 180,
-        output_tokens: 28,
       },
     },
   },
@@ -84,35 +86,37 @@ export const JEV_SYNTHETIC_FIXTURES: readonly JevSyntheticFixture[] = [
     expectedDecision: 'review',
     rawResponse: {
       project: JEV_PROJECT_ID,
-      model: JEV_MODEL_ID,
-      answers: {
-        intent: {
-          type: 'choice',
-          choice: 'routine',
-          confidence: 0.54,
-          probabilities: {
-            routine: 0.54,
-            kit: 0.4,
-            guidance: 0.03,
-            unknown: 0.02,
-            restricted: 0.01,
+      response: {
+        model: JEV_MODEL_ID,
+        answers: {
+          intent: {
+            type: 'choice',
+            choice: 'routine',
+            confidence: 0.54,
+            probabilities: {
+              routine: 0.54,
+              kit: 0.4,
+              guidance: 0.03,
+              unknown: 0.02,
+              restricted: 0.01,
+            },
+          },
+          topic: {
+            type: 'choice',
+            choice: 'general',
+            confidence: 0.6,
+            probabilities: {
+              time: 0.15,
+              priorities: 0.15,
+              consistency: 0.1,
+              general: 0.6,
+            },
           },
         },
-        topic: {
-          type: 'choice',
-          choice: 'general',
-          confidence: 0.6,
-          probabilities: {
-            time: 0.15,
-            priorities: 0.15,
-            consistency: 0.1,
-            general: 0.6,
-          },
+        usage: {
+          input_tokens: 195,
+          output_tokens: 32,
         },
-      },
-      usage: {
-        input_tokens: 195,
-        output_tokens: 32,
       },
     },
   },
@@ -126,35 +130,37 @@ export const JEV_SYNTHETIC_FIXTURES: readonly JevSyntheticFixture[] = [
     expectedDecision: 'blocked',
     rawResponse: {
       project: JEV_PROJECT_ID,
-      model: JEV_MODEL_ID,
-      answers: {
-        intent: {
-          type: 'choice',
-          choice: 'restricted',
-          confidence: 0.75,
-          probabilities: {
-            restricted: 0.75,
-            routine: 0.2,
-            kit: 0.02,
-            guidance: 0.02,
-            unknown: 0.01,
+      response: {
+        model: JEV_MODEL_ID,
+        answers: {
+          intent: {
+            type: 'choice',
+            choice: 'restricted',
+            confidence: 0.75,
+            probabilities: {
+              restricted: 0.75,
+              routine: 0.2,
+              kit: 0.02,
+              guidance: 0.02,
+              unknown: 0.01,
+            },
+          },
+          topic: {
+            type: 'choice',
+            choice: 'general',
+            confidence: 0.85,
+            probabilities: {
+              time: 0.05,
+              priorities: 0.05,
+              consistency: 0.05,
+              general: 0.85,
+            },
           },
         },
-        topic: {
-          type: 'choice',
-          choice: 'general',
-          confidence: 0.85,
-          probabilities: {
-            time: 0.05,
-            priorities: 0.05,
-            consistency: 0.05,
-            general: 0.85,
-          },
+        usage: {
+          input_tokens: 210,
+          output_tokens: 30,
         },
-      },
-      usage: {
-        input_tokens: 210,
-        output_tokens: 30,
       },
     },
   },
@@ -168,31 +174,33 @@ export const JEV_SYNTHETIC_FIXTURES: readonly JevSyntheticFixture[] = [
     expectedDecision: 'review',
     rawResponse: {
       project: JEV_PROJECT_ID,
-      model: JEV_MODEL_ID,
-      answers: {
-        intent: {
-          type: 'choice',
-          choice: 'custom_intent_invalid',
-          confidence: 0.95,
-          probabilities: {
-            routine: 0.05,
-            kit: 0.0,
-            guidance: 0.0,
-            unknown: 0.0,
-            restricted: 0.0,
-            // chave extra inválida
-            custom_intent_invalid: 0.95,
+      response: {
+        model: JEV_MODEL_ID,
+        answers: {
+          intent: {
+            type: 'choice',
+            choice: 'custom_intent_invalid',
+            confidence: 0.95,
+            probabilities: {
+              routine: 0.05,
+              kit: 0.0,
+              guidance: 0.0,
+              unknown: 0.0,
+              restricted: 0.0,
+              // chave extra inválida
+              custom_intent_invalid: 0.95,
+            },
           },
-        },
-        topic: {
-          type: 'choice',
-          choice: 'time',
-          confidence: 0.9,
-          probabilities: {
-            time: 0.9,
-            priorities: 0.04,
-            consistency: 0.03,
-            general: 0.03,
+          topic: {
+            type: 'choice',
+            choice: 'time',
+            confidence: 0.9,
+            probabilities: {
+              time: 0.9,
+              priorities: 0.04,
+              consistency: 0.03,
+              general: 0.03,
+            },
           },
         },
       },
@@ -208,29 +216,31 @@ export const JEV_SYNTHETIC_FIXTURES: readonly JevSyntheticFixture[] = [
     expectedDecision: 'review',
     rawResponse: {
       project: JEV_PROJECT_ID,
-      model: JEV_MODEL_ID,
-      answers: {
-        intent: {
-          type: 'choice',
-          choice: 'kit', // inconsistente: kit tem 0.20, routine tem 0.80
-          confidence: 0.9,
-          probabilities: {
-            routine: 0.8,
-            kit: 0.2,
-            guidance: 0.2,
-            unknown: 0.1,
-            restricted: 0.1,
-          }, // soma = 1.40
-        },
-        topic: {
-          type: 'choice',
-          choice: 'time',
-          confidence: 0.9,
-          probabilities: {
-            time: 0.9,
-            priorities: 0.04,
-            consistency: 0.03,
-            general: 0.03,
+      response: {
+        model: JEV_MODEL_ID,
+        answers: {
+          intent: {
+            type: 'choice',
+            choice: 'kit', // inconsistente: kit tem 0.20, routine tem 0.80
+            confidence: 0.9,
+            probabilities: {
+              routine: 0.8,
+              kit: 0.2,
+              guidance: 0.2,
+              unknown: 0.1,
+              restricted: 0.1,
+            }, // soma = 1.40
+          },
+          topic: {
+            type: 'choice',
+            choice: 'time',
+            confidence: 0.9,
+            probabilities: {
+              time: 0.9,
+              priorities: 0.04,
+              consistency: 0.03,
+              general: 0.03,
+            },
           },
         },
       },
@@ -246,29 +256,31 @@ export const JEV_SYNTHETIC_FIXTURES: readonly JevSyntheticFixture[] = [
     expectedDecision: 'review',
     rawResponse: {
       project: 'marca-terceira-financeira',
-      model: JEV_MODEL_ID,
-      answers: {
-        intent: {
-          type: 'choice',
-          choice: 'routine',
-          confidence: 0.95,
-          probabilities: {
-            routine: 0.95,
-            kit: 0.02,
-            guidance: 0.01,
-            unknown: 0.01,
-            restricted: 0.01,
+      response: {
+        model: JEV_MODEL_ID,
+        answers: {
+          intent: {
+            type: 'choice',
+            choice: 'routine',
+            confidence: 0.95,
+            probabilities: {
+              routine: 0.95,
+              kit: 0.02,
+              guidance: 0.01,
+              unknown: 0.01,
+              restricted: 0.01,
+            },
           },
-        },
-        topic: {
-          type: 'choice',
-          choice: 'time',
-          confidence: 0.92,
-          probabilities: {
-            time: 0.92,
-            priorities: 0.04,
-            consistency: 0.02,
-            general: 0.02,
+          topic: {
+            type: 'choice',
+            choice: 'time',
+            confidence: 0.92,
+            probabilities: {
+              time: 0.92,
+              priorities: 0.04,
+              consistency: 0.02,
+              general: 0.02,
+            },
           },
         },
       },

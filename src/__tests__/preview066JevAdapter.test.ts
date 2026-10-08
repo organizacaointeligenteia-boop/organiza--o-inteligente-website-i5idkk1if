@@ -5,9 +5,13 @@ import {
   JEV_PROVISIONAL_CONFIDENCE_THRESHOLD,
   JEV_INTENT_OPTIONS,
   JEV_TOPIC_OPTIONS,
-  type JevClassificationResponseRaw,
+  type TypeSafeRequestBody,
+  type JevRequestEnvelope,
+  type JevResponseEnvelope,
 } from '@/pilot/jevContract'
 import {
+  buildTypeSafeRequestBody,
+  buildJevRequestEnvelope,
   buildJevClassificationRequest,
   validateStrictChoiceAnswer,
   evaluateJevResponseEnvelope,
@@ -16,22 +20,46 @@ import { JEV_SYNTHETIC_FIXTURES, runSyntheticFixturesSimulation } from '@/pilot/
 import fs from 'node:fs'
 import path from 'node:path'
 
-describe('Preview 0.0.66 - Adaptador TypeSafe / Jev (Contrato Puro Offline)', () => {
-  describe('1. Contrato de Request (buildJevClassificationRequest)', () => {
-    it('gera request estruturado com state, model "jev-latest" e project isolado', () => {
+describe('Preview 0.0.66 / 0.0.67 - Adaptador TypeSafe / Jev (Contrato Puro Offline)', () => {
+  describe('1. Contrato de Request (buildTypeSafeRequestBody e buildJevRequestEnvelope)', () => {
+    it('buildJevRequestEnvelope gera envelope local com project obrigatório e request nativo', () => {
       const stateText = 'Gostaria de organizar minha rotina e definir prioridades para a semana'
-      const req = buildJevClassificationRequest(stateText)
+      const envelope: JevRequestEnvelope = buildJevRequestEnvelope(stateText)
 
-      expect(req.project).toBe('organizacao-inteligente')
-      expect(req.model).toBe('jev-latest')
-      expect(req.state).toBe(stateText)
-      expect(req.questions).toBeDefined()
-      expect(req.questions.intent).toBeDefined()
-      expect(req.questions.topic).toBeDefined()
+      expect(envelope.project).toBe('organizacao-inteligente')
+      expect(envelope.request).toBeDefined()
+      expect(envelope.request.model).toBe('jev-latest')
+      expect(envelope.request.state).toBe(stateText)
+      expect(envelope.request.questions).toBeDefined()
+      expect(envelope.request.questions.intent).toBeDefined()
+      expect(envelope.request.questions.topic).toBeDefined()
+    })
+
+    it('buildTypeSafeRequestBody gera corpo nativo com EXATAMENTE as chaves state, model e questions (sem project)', () => {
+      const stateText = 'Gostaria de organizar minha rotina'
+      const nativeBody: TypeSafeRequestBody = buildTypeSafeRequestBody(stateText)
+
+      expect(nativeBody.model).toBe('jev-latest')
+      expect(nativeBody.state).toBe(stateText)
+      expect(nativeBody.questions).toBeDefined()
+      expect('project' in (nativeBody as unknown as Record<string, unknown>)).toBe(false)
+    })
+
+    it('REGRESSÃO A (0.0.67): JSON.stringify(TypeSafeRequestBody) contém EXATAMENTE as chaves state, model e questions (project não vaza)', () => {
+      const nativeBody = buildTypeSafeRequestBody(
+        'Verificação de serialização estrita sem metadados',
+      )
+      const jsonString = JSON.stringify(nativeBody)
+      const parsed = JSON.parse(jsonString) as Record<string, unknown>
+
+      const keys = Object.keys(parsed).sort()
+      expect(keys).toEqual(['model', 'questions', 'state'].sort())
+      expect(keys).not.toContain('project')
+      expect(jsonString).not.toContain('"project"')
     })
 
     it('pergunta "intent" é do tipo "choice" com critérios bem separados em pt-BR', () => {
-      const req = buildJevClassificationRequest('teste')
+      const req = buildTypeSafeRequestBody('teste')
       const intentQ = req.questions.intent
 
       expect(intentQ.type).toBe('choice')
@@ -50,7 +78,7 @@ describe('Preview 0.0.66 - Adaptador TypeSafe / Jev (Contrato Puro Offline)', ()
     })
 
     it('pergunta "topic" é do tipo "choice" com as 4 opções de tópico fechadas', () => {
-      const req = buildJevClassificationRequest('teste')
+      const req = buildTypeSafeRequestBody('teste')
       const topicQ = req.questions.topic
 
       expect(topicQ.type).toBe('choice')
@@ -231,7 +259,47 @@ describe('Preview 0.0.66 - Adaptador TypeSafe / Jev (Contrato Puro Offline)', ()
     it('isolamento de marca: rejeita envelope de outras marcas e retorna decisão "review"', () => {
       const wrongBrandEnvelope = {
         project: 'outra-marca-qualquer',
-        model: 'jev-latest',
+        response: {
+          model: 'jev-latest',
+          answers: {
+            intent: {
+              type: 'choice',
+              choice: 'routine',
+              confidence: 0.95,
+              probabilities: {
+                routine: 0.95,
+                kit: 0.02,
+                guidance: 0.01,
+                unknown: 0.01,
+                restricted: 0.01,
+              },
+            },
+            topic: {
+              type: 'choice',
+              choice: 'time',
+              confidence: 0.95,
+              probabilities: {
+                time: 0.95,
+                priorities: 0.02,
+                consistency: 0.02,
+                general: 0.01,
+              },
+            },
+          },
+        },
+      }
+
+      const evaluated = evaluateJevResponseEnvelope(wrongBrandEnvelope)
+      expect(evaluated.decision).toBe('review')
+      expect(evaluated.intent).toBe('unknown')
+      expect(evaluated.validationErrors.some((e) => e.includes('Marca/projeto rejeitado'))).toBe(
+        true,
+      )
+    })
+
+    it('REGRESSÃO B (0.0.67): resposta SEM envelope de projeto (project ausente) e com project divergente resultam em decisão review', () => {
+      const validNativeResponse = {
+        model: JEV_MODEL_ID,
         answers: {
           intent: {
             type: 'choice',
@@ -259,40 +327,58 @@ describe('Preview 0.0.66 - Adaptador TypeSafe / Jev (Contrato Puro Offline)', ()
         },
       }
 
-      const evaluated = evaluateJevResponseEnvelope(wrongBrandEnvelope)
-      expect(evaluated.decision).toBe('review')
-      expect(evaluated.intent).toBe('unknown')
-      expect(evaluated.validationErrors.some((e) => e.includes('Marca/projeto rejeitado'))).toBe(
-        true,
-      )
+      // Caso 1: project ausente (apenas corpo nativo sem envelope)
+      const resMissingProject = evaluateJevResponseEnvelope(validNativeResponse)
+      expect(resMissingProject.decision).toBe('review')
+      expect(resMissingProject.intent).toBe('unknown')
+      expect(resMissingProject.decision).not.toBe('approved')
+      expect(
+        resMissingProject.validationErrors.some((e) =>
+          e.includes('Marca/projeto obrigatório ausente'),
+        ),
+      ).toBe(true)
+
+      // Caso 2: project divergente ('outra-marca')
+      const resDivergentProject = evaluateJevResponseEnvelope({
+        project: 'outra-marca',
+        response: validNativeResponse,
+      })
+      expect(resDivergentProject.decision).toBe('review')
+      expect(resDivergentProject.intent).toBe('unknown')
+      expect(resDivergentProject.decision).not.toBe('approved')
+      expect(
+        resDivergentProject.validationErrors.some((e) => e.includes('Marca/projeto rejeitado')),
+      ).toBe(true)
     })
 
     it('se modelo retornar "unknown", trata como unknown externo sem casts cegos', () => {
-      const unknownEnvelope = {
+      const unknownEnvelope: JevResponseEnvelope = {
         project: JEV_PROJECT_ID,
-        model: JEV_MODEL_ID,
-        answers: {
-          intent: {
-            type: 'choice',
-            choice: 'unknown',
-            confidence: 0.92,
-            probabilities: {
-              unknown: 0.92,
-              routine: 0.02,
-              kit: 0.02,
-              guidance: 0.02,
-              restricted: 0.02,
+        response: {
+          model: JEV_MODEL_ID,
+          answers: {
+            intent: {
+              type: 'choice',
+              choice: 'unknown',
+              confidence: 0.92,
+              probabilities: {
+                unknown: 0.92,
+                routine: 0.02,
+                kit: 0.02,
+                guidance: 0.02,
+                restricted: 0.02,
+              },
             },
-          },
-          topic: {
-            type: 'choice',
-            choice: 'general',
-            confidence: 0.9,
-            probabilities: {
-              time: 0.03,
-              priorities: 0.03,
-              consistency: 0.04,
-              general: 0.9,
+            topic: {
+              type: 'choice',
+              choice: 'general',
+              confidence: 0.9,
+              probabilities: {
+                time: 0.03,
+                priorities: 0.03,
+                consistency: 0.04,
+                general: 0.9,
+              },
             },
           },
         },
@@ -307,31 +393,33 @@ describe('Preview 0.0.66 - Adaptador TypeSafe / Jev (Contrato Puro Offline)', ()
     })
 
     it('RESTRICTED DOMINA SEMPRE: restricted vence mesmo com confiança menor (ex.: 0.65 vs rotina)', () => {
-      const restrictedEnvelope = {
+      const restrictedEnvelope: JevResponseEnvelope = {
         project: JEV_PROJECT_ID,
-        model: JEV_MODEL_ID,
-        answers: {
-          intent: {
-            type: 'choice',
-            choice: 'restricted',
-            confidence: 0.65, // abaixo do limiar 0.8, mas restrito DOMINA
-            probabilities: {
-              restricted: 0.65,
-              routine: 0.3,
-              kit: 0.02,
-              guidance: 0.02,
-              unknown: 0.01,
+        response: {
+          model: JEV_MODEL_ID,
+          answers: {
+            intent: {
+              type: 'choice',
+              choice: 'restricted',
+              confidence: 0.65, // abaixo do limiar 0.8, mas restrito DOMINA
+              probabilities: {
+                restricted: 0.65,
+                routine: 0.3,
+                kit: 0.02,
+                guidance: 0.02,
+                unknown: 0.01,
+              },
             },
-          },
-          topic: {
-            type: 'choice',
-            choice: 'general',
-            confidence: 0.9,
-            probabilities: {
-              time: 0.02,
-              priorities: 0.03,
-              consistency: 0.05,
-              general: 0.9,
+            topic: {
+              type: 'choice',
+              choice: 'general',
+              confidence: 0.9,
+              probabilities: {
+                time: 0.02,
+                priorities: 0.03,
+                consistency: 0.05,
+                general: 0.9,
+              },
             },
           },
         },
@@ -344,31 +432,33 @@ describe('Preview 0.0.66 - Adaptador TypeSafe / Jev (Contrato Puro Offline)', ()
     })
 
     it('limiar provisório 0.8 não calibrado: confiança menor encaminha para revisão manual', () => {
-      const lowConfidenceEnvelope = {
+      const lowConfidenceEnvelope: JevResponseEnvelope = {
         project: JEV_PROJECT_ID,
-        model: JEV_MODEL_ID,
-        answers: {
-          intent: {
-            type: 'choice',
-            choice: 'routine',
-            confidence: 0.72, // < 0.8
-            probabilities: {
-              routine: 0.72,
-              kit: 0.2,
-              guidance: 0.04,
-              unknown: 0.02,
-              restricted: 0.02,
+        response: {
+          model: JEV_MODEL_ID,
+          answers: {
+            intent: {
+              type: 'choice',
+              choice: 'routine',
+              confidence: 0.72, // < 0.8
+              probabilities: {
+                routine: 0.72,
+                kit: 0.2,
+                guidance: 0.04,
+                unknown: 0.02,
+                restricted: 0.02,
+              },
             },
-          },
-          topic: {
-            type: 'choice',
-            choice: 'priorities',
-            confidence: 0.85,
-            probabilities: {
-              time: 0.05,
-              priorities: 0.85,
-              consistency: 0.05,
-              general: 0.05,
+            topic: {
+              type: 'choice',
+              choice: 'priorities',
+              confidence: 0.85,
+              probabilities: {
+                time: 0.05,
+                priorities: 0.85,
+                consistency: 0.05,
+                general: 0.05,
+              },
             },
           },
         },
@@ -383,31 +473,33 @@ describe('Preview 0.0.66 - Adaptador TypeSafe / Jev (Contrato Puro Offline)', ()
     })
 
     it('aprovação com mapeamento estrito para o catálogo editorial existente (sem texto gerado)', () => {
-      const validEnvelope = {
+      const validEnvelope: JevResponseEnvelope = {
         project: JEV_PROJECT_ID,
-        model: JEV_MODEL_ID,
-        answers: {
-          intent: {
-            type: 'choice',
-            choice: 'routine',
-            confidence: 0.95,
-            probabilities: {
-              routine: 0.95,
-              kit: 0.02,
-              guidance: 0.01,
-              unknown: 0.01,
-              restricted: 0.01,
+        response: {
+          model: JEV_MODEL_ID,
+          answers: {
+            intent: {
+              type: 'choice',
+              choice: 'routine',
+              confidence: 0.95,
+              probabilities: {
+                routine: 0.95,
+                kit: 0.02,
+                guidance: 0.01,
+                unknown: 0.01,
+                restricted: 0.01,
+              },
             },
-          },
-          topic: {
-            type: 'choice',
-            choice: 'time',
-            confidence: 0.92,
-            probabilities: {
-              time: 0.92,
-              priorities: 0.03,
-              consistency: 0.03,
-              general: 0.02,
+            topic: {
+              type: 'choice',
+              choice: 'time',
+              confidence: 0.92,
+              probabilities: {
+                time: 0.92,
+                priorities: 0.03,
+                consistency: 0.03,
+                general: 0.02,
+              },
             },
           },
         },

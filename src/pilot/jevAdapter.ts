@@ -5,8 +5,10 @@ import {
   JEV_PROVISIONAL_THRESHOLD_LABEL,
   JEV_INTENT_OPTIONS,
   JEV_TOPIC_OPTIONS,
-  type JevClassificationRequest,
-  type JevClassificationResponseRaw,
+  type TypeSafeRequestBody,
+  type JevRequestEnvelope,
+  type TypeSafeResponseBodyRaw,
+  type JevResponseEnvelope,
   type JevIntentChoice,
   type JevTopicChoice,
   type JevAdapterResult,
@@ -17,18 +19,13 @@ import { resolveSuggestedModel } from './catalog'
 import type { PilotPath } from './types'
 
 /**
- * Pure request builder for TypeSafe / Jev Choice primitive.
- * Enforces:
- * - Isolated brand envelope (project: 'organizacao-inteligente')
- * - Model: 'jev-latest'
- * - Instructions and criteria in pt-BR with clear separation
- * - Restricted category with highest priority for clinical, legal, and financial themes
+ * Builds the native request body for the TypeSafe Choice primitive.
+ * Contains EXATAMENTE state, model, questions (sem project nem metadados extras).
  */
-export function buildJevClassificationRequest(stateText: string): JevClassificationRequest {
+export function buildTypeSafeRequestBody(stateText: string): TypeSafeRequestBody {
   return {
-    project: JEV_PROJECT_ID,
-    model: JEV_MODEL_ID,
     state: stateText,
+    model: JEV_MODEL_ID,
     questions: {
       intent: {
         type: 'choice',
@@ -62,6 +59,22 @@ export function buildJevClassificationRequest(stateText: string): JevClassificat
     },
   }
 }
+
+/**
+ * Builds the local request envelope wrapping the native request with mandatory brand isolation metadata.
+ * 'project' is mandatory local metadata ('organizacao-inteligente') and not sent to the remote API.
+ */
+export function buildJevRequestEnvelope(stateText: string): JevRequestEnvelope {
+  return {
+    project: JEV_PROJECT_ID,
+    request: buildTypeSafeRequestBody(stateText),
+  }
+}
+
+/**
+ * Backwards compatibility alias for buildJevRequestEnvelope.
+ */
+export const buildJevClassificationRequest = buildJevRequestEnvelope
 
 /**
  * Strict validator for a single Choice answer according to TypeSafe contract.
@@ -204,27 +217,18 @@ export function validateStrictChoiceAnswer<T extends string>(
 }
 
 /**
- * Pure local adapter evaluation of a raw response.
- *
- * Rules:
- * 1. Brand isolation: Envelope must have project === 'organizacao-inteligente'. Any other brand is REJECTED.
- * 2. Strict schema parsing: Invalid schema => decision = 'review', intent = 'unknown', NEVER invented certainty.
- * 3. Priority of 'restricted': If intent is 'restricted', decision is ALWAYS 'blocked', regardless of confidence or threshold.
- * 4. External 'unknown': If model returned 'unknown', decision is ALWAYS 'review'.
- * 5. Provisional threshold (0.8, not calibrated): If confidence of either intent or topic is below 0.8, decision is 'review'.
- * 6. Editorial catalog mapping: Uses ONLY existing static models (priorities, week, steps). NO generative text.
+ * Evaluates the native response body from TypeSafe / Jev after envelope unwrapping.
  */
-export function evaluateJevResponseEnvelope(
-  rawResponse: unknown,
+export function evaluateTypeSafeResponseBody(
+  nativeBody: unknown,
   provisionalThreshold: number = JEV_PROVISIONAL_CONFIDENCE_THRESHOLD,
 ): JevAdapterResult {
   const thresholdDisclaimer = `Limiar de confiança: ${provisionalThreshold} (provisório e NÃO calibrado; confiança reflete apenas a dispersão matemática das probabilidades, não mede acurácia do modelo)`
 
-  // 1. Initial envelope structural check
-  if (!rawResponse || typeof rawResponse !== 'object' || Array.isArray(rawResponse)) {
+  if (!nativeBody || typeof nativeBody !== 'object' || Array.isArray(nativeBody)) {
     return {
       decision: 'review',
-      decisionReason: 'Envelope da resposta inválido ou não é um objeto.',
+      decisionReason: 'Corpo nativo da resposta inválido ou não é um objeto.',
       intent: 'unknown',
       topic: 'general',
       provisionalConfidenceThreshold: provisionalThreshold,
@@ -234,47 +238,28 @@ export function evaluateJevResponseEnvelope(
       rawTopicConfidence: null,
       suggestedModelKey: null,
       suggestedPath: null,
-      validationErrors: ['Envelope raiz não é um objeto válido.'],
+      validationErrors: ['Corpo nativo da resposta não é um objeto válido.'],
     }
   }
 
-  const envelope = rawResponse as Partial<JevClassificationResponseRaw>
+  const responseObj = nativeBody as Partial<TypeSafeResponseBodyRaw>
   const errors: string[] = []
 
-  // 2. Brand isolation check
-  if (envelope.project !== JEV_PROJECT_ID) {
-    const errorMsg = `Marca/projeto rejeitado: envelope pertence a '${String(envelope.project)}', esperado '${JEV_PROJECT_ID}'`
-    return {
-      decision: 'review',
-      decisionReason: 'Resposta rejeitada: marca ou projeto incompatível com esta aplicação.',
-      intent: 'unknown',
-      topic: 'general',
-      provisionalConfidenceThreshold: provisionalThreshold,
-      isThresholdCalibrated: false,
-      thresholdDisclaimer,
-      rawIntentConfidence: null,
-      rawTopicConfidence: null,
-      suggestedModelKey: null,
-      suggestedPath: null,
-      validationErrors: [errorMsg],
-    }
+  // Model identifier check
+  if (!responseObj.model || typeof responseObj.model !== 'string') {
+    errors.push("Campo 'model' ausente ou inválido na resposta.")
   }
 
-  // 3. Model identifier check
-  if (!envelope.model || typeof envelope.model !== 'string') {
-    errors.push("Campo 'model' ausente ou inválido no envelope.")
-  }
-
-  // 4. Answers container check
+  // Answers container check
   if (
-    !envelope.answers ||
-    typeof envelope.answers !== 'object' ||
-    Array.isArray(envelope.answers)
+    !responseObj.answers ||
+    typeof responseObj.answers !== 'object' ||
+    Array.isArray(responseObj.answers)
   ) {
-    errors.push("Campo 'answers' ausente ou inválido no envelope.")
+    errors.push("Campo 'answers' ausente ou inválido na resposta.")
     return {
       decision: 'review',
-      decisionReason: 'Respostas ausentes no envelope.',
+      decisionReason: 'Respostas ausentes na resposta.',
       intent: 'unknown',
       topic: 'general',
       provisionalConfidenceThreshold: provisionalThreshold,
@@ -288,14 +273,14 @@ export function evaluateJevResponseEnvelope(
     }
   }
 
-  // 5. Strict validation of intent and topic
+  // Strict validation of intent and topic
   const intentVal = validateStrictChoiceAnswer<JevIntentChoice>(
-    envelope.answers.intent,
+    responseObj.answers.intent,
     JEV_INTENT_OPTIONS,
     'intent',
   )
   const topicVal = validateStrictChoiceAnswer<JevTopicChoice>(
-    envelope.answers.topic,
+    responseObj.answers.topic,
     JEV_TOPIC_OPTIONS,
     'topic',
   )
@@ -329,7 +314,7 @@ export function evaluateJevResponseEnvelope(
   const intentAnswer = intentVal.value
   const topicAnswer = topicVal.value
 
-  // 6. RESTRICTED DOMINANCE: Restricted overrides everything, even with lower confidence
+  // RESTRICTED DOMINANCE: Restricted overrides everything, even with lower confidence
   if (intentAnswer.choice === 'restricted') {
     return {
       decision: 'blocked',
@@ -350,7 +335,7 @@ export function evaluateJevResponseEnvelope(
     }
   }
 
-  // 7. Unknown intent: External unknown must NOT be cast to certainty
+  // Unknown intent: External unknown must NOT be cast to certainty
   if (intentAnswer.choice === 'unknown') {
     return {
       decision: 'review',
@@ -368,7 +353,7 @@ export function evaluateJevResponseEnvelope(
     }
   }
 
-  // 8. Confidence threshold check (provisional 0.8)
+  // Confidence threshold check (provisional 0.8)
   const isConfidenceLow =
     intentAnswer.confidence < provisionalThreshold || topicAnswer.confidence < provisionalThreshold
 
@@ -389,7 +374,7 @@ export function evaluateJevResponseEnvelope(
     }
   }
 
-  // 9. Approved: map strictly to existing static editorial catalog
+  // Approved: map strictly to existing static editorial catalog
   let suggestedPath: PilotPath | null = null
   if (intentAnswer.choice === 'routine') suggestedPath = 'routine'
   else if (intentAnswer.choice === 'kit') suggestedPath = 'kit'
@@ -411,4 +396,98 @@ export function evaluateJevResponseEnvelope(
     suggestedPath,
     validationErrors: [],
   }
+}
+
+/**
+ * Pure local adapter evaluation of a local response envelope (unknown input).
+ *
+ * Rules:
+ * 1. Brand isolation: Envelope must be an object with MANDATORY `project` strictly === 'organizacao-inteligente'.
+ *    If `project` is missing, undefined, null, or different from 'organizacao-inteligente', the adapter REJECTS immediately
+ *    (decision = 'review', intent = 'unknown', validation error recorded, NEVER invented certainty).
+ * 2. Unwrapping: The native response body is extracted from `response` (or legacy root format if structured as envelope)
+ *    and validated strictly.
+ * 3. Strict schema parsing: Invalid schema => decision = 'review', intent = 'unknown', NEVER invented certainty.
+ * 4. Priority of 'restricted': If intent is 'restricted', decision is ALWAYS 'blocked', regardless of confidence or threshold.
+ * 5. External 'unknown': If model returned 'unknown', decision is ALWAYS 'review'.
+ * 6. Provisional threshold (0.8, not calibrated): If confidence of either intent or topic is below 0.8, decision is 'review'.
+ * 7. Editorial catalog mapping: Uses ONLY existing static models (priorities, week, steps). NO generative text.
+ */
+export function evaluateJevResponseEnvelope(
+  rawEnvelope: unknown,
+  provisionalThreshold: number = JEV_PROVISIONAL_CONFIDENCE_THRESHOLD,
+): JevAdapterResult {
+  const thresholdDisclaimer = `Limiar de confiança: ${provisionalThreshold} (provisório e NÃO calibrado; confiança reflete apenas a dispersão matemática das probabilidades, não mede acurácia do modelo)`
+
+  // 1. Initial envelope structural check
+  if (!rawEnvelope || typeof rawEnvelope !== 'object' || Array.isArray(rawEnvelope)) {
+    return {
+      decision: 'review',
+      decisionReason: 'Envelope da resposta inválido ou não é um objeto.',
+      intent: 'unknown',
+      topic: 'general',
+      provisionalConfidenceThreshold: provisionalThreshold,
+      isThresholdCalibrated: false,
+      thresholdDisclaimer,
+      rawIntentConfidence: null,
+      rawTopicConfidence: null,
+      suggestedModelKey: null,
+      suggestedPath: null,
+      validationErrors: ['Envelope raiz não é um objeto válido.'],
+    }
+  }
+
+  const envelopeObj = rawEnvelope as Record<string, unknown>
+
+  // 2. Mandatory brand isolation check: 'project' must exist and be strictly 'organizacao-inteligente'
+  if (
+    !('project' in envelopeObj) ||
+    envelopeObj.project === undefined ||
+    envelopeObj.project === null
+  ) {
+    return {
+      decision: 'review',
+      decisionReason: 'Resposta rejeitada: metadado local de marca "project" ausente no envelope.',
+      intent: 'unknown',
+      topic: 'general',
+      provisionalConfidenceThreshold: provisionalThreshold,
+      isThresholdCalibrated: false,
+      thresholdDisclaimer,
+      rawIntentConfidence: null,
+      rawTopicConfidence: null,
+      suggestedModelKey: null,
+      suggestedPath: null,
+      validationErrors: [
+        `Marca/projeto obrigatório ausente: esperado '${JEV_PROJECT_ID}', mas o campo 'project' não foi informado`,
+      ],
+    }
+  }
+
+  if (envelopeObj.project !== JEV_PROJECT_ID) {
+    const errorMsg = `Marca/projeto rejeitado: envelope pertence a '${String(envelopeObj.project)}', esperado '${JEV_PROJECT_ID}'`
+    return {
+      decision: 'review',
+      decisionReason: 'Resposta rejeitada: marca ou projeto incompatível com esta aplicação.',
+      intent: 'unknown',
+      topic: 'general',
+      provisionalConfidenceThreshold: provisionalThreshold,
+      isThresholdCalibrated: false,
+      thresholdDisclaimer,
+      rawIntentConfidence: null,
+      rawTopicConfidence: null,
+      suggestedModelKey: null,
+      suggestedPath: null,
+      validationErrors: [errorMsg],
+    }
+  }
+
+  // 3. Extract native response body:
+  // In the standard JevResponseEnvelope: { project: 'organizacao-inteligente', response: TypeSafeResponseBodyRaw }
+  // For backwards compatibility or flat shape with answers: if envelopeObj.response is an object, use it; else if envelopeObj.answers exists, evaluate envelopeObj as body.
+  const nativeBody =
+    'response' in envelopeObj && envelopeObj.response && typeof envelopeObj.response === 'object'
+      ? envelopeObj.response
+      : envelopeObj
+
+  return evaluateTypeSafeResponseBody(nativeBody, provisionalThreshold)
 }
