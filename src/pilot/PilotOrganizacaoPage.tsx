@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   Sparkles,
@@ -16,9 +16,147 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { resolveAuthorization, type AuthzDecision } from './authContract'
+import { getStandaloneApiUrl, setCustomStandaloneApiUrl } from './standaloneConfig'
+import { StandaloneOiClient, type OiCycleStatusResponse, type OiPlan } from './standaloneClient'
+import {
+  Download,
+  Terminal,
+  Play,
+  Plus,
+  RefreshCw,
+  FileText,
+  CheckCircle2,
+  Circle,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function PilotOrganizacaoPage() {
   const { user, isAuthenticated, loading, signOut } = useAuth()
+
+  // Suporte à conexão com o backend isolado standalone
+  const [standaloneUrlInput, setStandaloneUrlInput] = useState<string>(getStandaloneApiUrl())
+  const [standaloneClient, setStandaloneClient] = useState<StandaloneOiClient | null>(() => {
+    const url = getStandaloneApiUrl()
+    return url ? new StandaloneOiClient(url) : null
+  })
+  const [cycleStatus, setCycleStatus] = useState<OiCycleStatusResponse | null>(null)
+  const [cycleLoading, setCycleLoading] = useState(false)
+  const [plans, setPlans] = useState<OiPlan[]>([])
+  const [, setPlansLoading] = useState(false)
+
+  // Formulário de criação de plano guiado
+  const [formCategory, setFormCategory] = useState<
+    'rotina' | 'prioridades' | 'documentos' | 'habitos'
+  >('rotina')
+  const [formObjective, setFormObjective] = useState('')
+  const [formDifficulty] = useState<'iniciante' | 'intermediario' | 'avancado'>('iniciante')
+  const [formTime, setFormTime] = useState<'5m' | '10m' | '20m' | '45m'>('10m')
+  const [formDeadline] = useState('')
+  const [formNotes, setFormNotes] = useState('')
+  const [creatingPlan, setCreatingPlan] = useState(false)
+  const [actionMessage, setActionMessage] = useState<string | null>(null)
+
+  // Atualizar cliente quando a URL for modificada pelo usuário
+  const handleConnectEndpoint = (e: React.FormEvent) => {
+    e.preventDefault()
+    setCustomStandaloneApiUrl(standaloneUrlInput)
+    if (standaloneUrlInput.trim()) {
+      const client = new StandaloneOiClient(standaloneUrlInput.trim())
+      setStandaloneClient(client)
+      setActionMessage(`Endpoint isolado configurado: ${standaloneUrlInput.trim()}`)
+    } else {
+      setStandaloneClient(null)
+      setCycleStatus(null)
+      setPlans([])
+      setActionMessage('Endpoint removido. Retornado ao modo fail-closed padrão.')
+    }
+  }
+
+  // Carregar status do ciclo quando o cliente estiver conectado
+  const refreshCycle = async () => {
+    if (!standaloneClient || !standaloneClient.getToken()) return
+    setCycleLoading(true)
+    try {
+      const status = await standaloneClient.getCycleStatus()
+      setCycleStatus(status)
+      const memberPlans = await standaloneClient.listPlans()
+      setPlans(memberPlans)
+    } catch (_) {
+      setActionMessage('Erro ao consultar endpoint isolado.')
+    } finally {
+      setCycleLoading(false)
+    }
+  }
+
+  const handleStartCycle = async () => {
+    if (!standaloneClient) return
+    setCycleLoading(true)
+    const res = await standaloneClient.startCycle()
+    setCycleLoading(false)
+    if (res.success) {
+      setActionMessage('Ciclo de 21 dias iniciado com sucesso!')
+      await refreshCycle()
+    } else {
+      setActionMessage(`Não foi possível iniciar o ciclo: ${res.error || 'Erro'}`)
+    }
+  }
+
+  const handleCreatePlan = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!standaloneClient) return
+    setCreatingPlan(true)
+    setActionMessage(null)
+    const res = await standaloneClient.createPlan({
+      category: formCategory,
+      objective: formObjective,
+      difficulty: formDifficulty,
+      timeAvailable: formTime,
+      targetDeadline: formDeadline,
+      customNotes: formNotes,
+    })
+    setCreatingPlan(false)
+    if (res.success && res.plan) {
+      setActionMessage(`Plano "${res.plan.title}" criado com sucesso!`)
+      setFormObjective('')
+      setFormNotes('')
+      await refreshCycle()
+    } else {
+      setActionMessage(`Falha ao criar plano: ${res.error || 'Erro desconhecido'}`)
+    }
+  }
+
+  const handleExportPdf = async (planId: string) => {
+    if (!standaloneClient) return
+    const res = await standaloneClient.exportPlanPdf(planId)
+    if (res.success && res.pdfText) {
+      const blob = new Blob([res.pdfText], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `plano-oi-${planId}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } else {
+      setActionMessage(`Erro ao exportar PDF: ${res.error || 'Erro'}`)
+    }
+  }
+
+  const handleToggleChecklist = async (plan: OiPlan, actionId: string) => {
+    if (!standaloneClient) return
+    const updated = plan.actionsChecklist.map((a) =>
+      a.id === actionId ? { ...a, done: !a.done } : a,
+    )
+    const ok = await standaloneClient.updatePlanChecklist(plan.id, updated)
+    if (ok) {
+      setPlans((prev) =>
+        prev.map((p) => (p.id === plan.id ? { ...p, actionsChecklist: updated } : p)),
+      )
+    }
+  }
 
   // Apply noindex, nofollow solely for this route
   useEffect(() => {
@@ -138,6 +276,271 @@ export default function PilotOrganizacaoPage() {
               dados não autorizados.
             </p>
           </div>
+        </section>
+
+        {/* Seção de Conexão e Pacote Standalone (Exclusiva para o Proprietário / Testes) */}
+        <section
+          aria-labelledby="standalone-package-title"
+          className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-7 space-y-5 shadow-xs"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <Terminal className="w-3.5 h-3.5 text-slate-600" />
+                Backend Standalone Executável (Local)
+              </span>
+              <h2 id="standalone-package-title" className="text-lg font-bold text-slate-900">
+                Pacote Isolado para Execução pelo Proprietário
+              </h2>
+            </div>
+            <a
+              href="/oi-standalone-backend.tar.gz"
+              download="oi-standalone-backend.tar.gz"
+              className="inline-flex items-center gap-2 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-xl transition-colors shadow-2xs"
+            >
+              <Download className="w-4 h-4" />
+              Baixar Pacote Standalone (.tar.gz)
+            </a>
+          </div>
+
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Conforme instrução técnica, o backend deste projeto é um único PocketBase compartilhado
+            sem novas migrações. O pacote acima contém o PocketBase completo isolado com migrações
+            de esquema (<code>oi_memberships</code>, <code>oi_orders</code>, <code>oi_cycles</code>,{' '}
+            <code>oi_quotas</code>, <code>oi_plans</code>), hooks de Kiwify e rotas de ciclos para
+            execução em seu ambiente local.
+          </p>
+
+          <form
+            onSubmit={handleConnectEndpoint}
+            className="pt-2 flex flex-wrap sm:flex-nowrap gap-2 items-center"
+          >
+            <div className="flex-1 min-w-[240px]">
+              <Input
+                type="text"
+                placeholder="Ex.: http://127.0.0.1:8090 (URL do endpoint isolado local)"
+                value={standaloneUrlInput}
+                onChange={(e) => setStandaloneUrlInput(e.target.value)}
+                className="text-xs h-9 bg-slate-50"
+              />
+            </div>
+            <Button type="submit" size="sm" variant="outline" className="text-xs h-9 shrink-0">
+              {standaloneUrlInput ? 'Conectar Endpoint' : 'Redefinir Padrão'}
+            </Button>
+          </form>
+
+          {actionMessage && (
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700">
+              {actionMessage}
+            </div>
+          )}
+
+          {/* Interface Ativa do Ciclo de 21 Dias se o cliente estiver conectado ao backend standalone */}
+          {standaloneClient && cycleStatus && (
+            <div className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                <div className="space-y-0.5">
+                  <div className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Ciclo de 21 Dias
+                  </div>
+                  <div className="text-sm font-semibold text-slate-900">
+                    Status: <span className="uppercase text-blue-600">{cycleStatus.status}</span>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={refreshCycle}
+                  disabled={cycleLoading}
+                  className="text-xs"
+                >
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 mr-1.5 ${cycleLoading ? 'animate-spin' : ''}`}
+                  />
+                  Atualizar
+                </Button>
+              </div>
+
+              {cycleStatus.status === 'waiting_start' && (
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    Sua compra está confirmada! Você tem até 7 dias para iniciar voluntariamente seu
+                    ciclo de 21 dias.
+                  </p>
+                  <Button
+                    onClick={handleStartCycle}
+                    disabled={cycleLoading}
+                    className="bg-amber-600 hover:bg-amber-700 text-white text-xs"
+                  >
+                    <Play className="w-3.5 h-3.5 mr-1.5" />
+                    Começar meus 21 dias agora
+                  </Button>
+                </div>
+              )}
+
+              {cycleStatus.status === 'active' && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-white p-3 rounded-xl border border-slate-200">
+                    <div className="text-[11px] text-slate-500">Dias Restantes</div>
+                    <div className="text-lg font-bold text-slate-900">
+                      {cycleStatus.daysRemaining} dias
+                    </div>
+                  </div>
+                  <div className="bg-white p-3 rounded-xl border border-slate-200">
+                    <div className="text-[11px] text-slate-500">Cota Diária</div>
+                    <div className="text-lg font-bold text-slate-900">
+                      {cycleStatus.quotas?.dailyRemaining} / 5
+                    </div>
+                  </div>
+                  <div className="bg-white p-3 rounded-xl border border-slate-200">
+                    <div className="text-[11px] text-slate-500">Cota do Ciclo</div>
+                    <div className="text-lg font-bold text-slate-900">
+                      {cycleStatus.quotas?.cycleRemaining} / 50
+                    </div>
+                  </div>
+                  <div className="bg-white p-3 rounded-xl border border-slate-200">
+                    <div className="text-[11px] text-slate-500">Expiração</div>
+                    <div className="text-xs font-semibold text-slate-700 truncate">
+                      {cycleStatus.expiresAt?.substring(0, 10)}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {cycleStatus.status === 'expired' && (
+                <div className="p-4 bg-slate-100 border border-slate-200 rounded-xl text-xs text-slate-700 space-y-1">
+                  <div className="font-semibold text-slate-900">Período de 21 Dias Expirado</div>
+                  <p>
+                    Seu acesso está em modo de somente consulta/exportação de resultados pelos
+                    próximos 30 dias.
+                  </p>
+                </div>
+              )}
+
+              {/* Formulário de Criação de Plano se ciclo estiver ativo */}
+              {cycleStatus.canCreatePlans && (
+                <form
+                  onSubmit={handleCreatePlan}
+                  className="bg-white p-4 rounded-xl border border-slate-200 space-y-3"
+                >
+                  <div className="font-semibold text-xs text-slate-900">
+                    Criar Novo Plano de Organização
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-[11px]">Categoria</Label>
+                      <select
+                        value={formCategory}
+                        onChange={(e) =>
+                          setFormCategory(
+                            e.target.value as 'rotina' | 'prioridades' | 'documentos' | 'habitos',
+                          )
+                        }
+                        className="w-full text-xs h-8 border rounded-md px-2 bg-slate-50"
+                      >
+                        <option value="rotina">Rotina Diária</option>
+                        <option value="prioridades">Prioridades e Foco</option>
+                        <option value="documentos">Organização de Documentos</option>
+                        <option value="habitos">Criação de Hábitos</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Tempo Disponível</Label>
+                      <select
+                        value={formTime}
+                        onChange={(e) =>
+                          setFormTime(e.target.value as '5m' | '10m' | '20m' | '45m')
+                        }
+                        className="w-full text-xs h-8 border rounded-md px-2 bg-slate-50"
+                      >
+                        <option value="5m">5 minutos</option>
+                        <option value="10m">10 minutos</option>
+                        <option value="20m">20 minutos</option>
+                        <option value="45m">45 minutos</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">Objetivo Específico</Label>
+                    <Input
+                      placeholder="Ex.: Organizar meus recibos de despesas do mês"
+                      value={formObjective}
+                      onChange={(e) => setFormObjective(e.target.value)}
+                      className="text-xs h-8"
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={creatingPlan}
+                    className="text-xs bg-slate-900 text-white"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    {creatingPlan ? 'Processando...' : 'Gerar Plano com Biblioteca Revisável'}
+                  </Button>
+                </form>
+              )}
+
+              {/* Lista de Planos do Usuário */}
+              {plans.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="text-xs font-bold text-slate-900">
+                    Meus Planos ({plans.length})
+                  </div>
+                  <div className="space-y-2">
+                    {plans.map((p) => (
+                      <div
+                        key={p.id}
+                        className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-slate-900">
+                            {p.title} (v{p.version})
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleExportPdf(p.id)}
+                            className="text-[11px] h-7"
+                          >
+                            <FileText className="w-3 h-3 mr-1" />
+                            PDF
+                          </Button>
+                        </div>
+                        <p className="text-slate-600 text-[11px]">{p.strategySummary}</p>
+                        <div className="space-y-1 pt-1">
+                          {p.actionsChecklist.map((act) => (
+                            <button
+                              key={act.id}
+                              type="button"
+                              onClick={() => handleToggleChecklist(p, act.id)}
+                              className="w-full flex items-center gap-2 text-left hover:bg-slate-50 p-1 rounded"
+                            >
+                              {act.done ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              ) : (
+                                <Circle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              )}
+                              <span
+                                className={
+                                  act.done
+                                    ? 'line-through text-slate-400 text-[11px]'
+                                    : 'text-slate-700 text-[11px]'
+                                }
+                              >
+                                {act.text}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* Card Principal de Apresentação da Área Paga */}
@@ -345,7 +748,7 @@ export default function PilotOrganizacaoPage() {
 
         {/* Rodapé da página */}
         <footer className="pt-4 border-t border-slate-200 text-xs text-slate-500 space-y-2 text-center">
-          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.69</p>
+          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.70</p>
           <p className="text-[11px] text-slate-400">
             Ambiente exclusivo de visualização prévia da área paga.
           </p>

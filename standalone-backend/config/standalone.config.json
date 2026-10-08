@@ -1,0 +1,26 @@
+// standalone-backend/config/standalone.config.json
+{
+  "port": 8090,
+  "kiwify": {
+    "webhookSecret": "oi-kiwify-test-secret",
+    "productId": "oi-ia-tool",
+    "kitProductId": "kit-organizacao-inteligente"
+  },
+  "jev": {
+    "apiKey": "",
+    "endpoint": "https://api.typesafe.ai/v1/systemone",
+    "provisionalThreshold": 0.8
+  },
+  "quotas": {
+    "dailyMax": 5,
+    "cycleMax": 50
+  },
+  "cycle": {
+    "waitingDays": 7,
+    "durationDays": 21,
+    "retentionDays": 30
+  },
+  "testing": {
+    "allowTestClock": true
+  }
+}

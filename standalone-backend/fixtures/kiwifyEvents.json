@@ -1,0 +1,53 @@
+// standalone-backend/fixtures/kiwifyEvents.json
+{
+  "approvedAiOrder": {
+    "order_id": "kiwify_oi_valid_001",
+    "order_status": "paid",
+    "order_amount": 9700,
+    "Product": {
+      "product_id": "oi-ia-tool",
+      "product_name": "Ferramenta de IA de Organização Inteligente"
+    },
+    "Customer": {
+      "email": "user1@organizacaointeligente.com.br",
+      "full_name": "Usuário Teste Um"
+    },
+    "is_test": true
+  },
+  "kitOrderMismatch": {
+    "order_id": "kiwify_kit_001",
+    "order_status": "paid",
+    "order_amount": 6700,
+    "Product": {
+      "product_id": "kit-organizacao-inteligente",
+      "product_name": "Kit de Organização Inteligente"
+    },
+    "Customer": {
+      "email": "user1@organizacaointeligente.com.br",
+      "full_name": "Usuário Teste Um"
+    },
+    "is_test": true
+  },
+  "refundAiOrder": {
+    "order_id": "kiwify_oi_valid_001",
+    "order_status": "refunded",
+    "Product": {
+      "product_id": "oi-ia-tool"
+    },
+    "Customer": {
+      "email": "user1@organizacaointeligente.com.br"
+    },
+    "is_test": true
+  },
+  "chargebackAiOrder": {
+    "order_id": "kiwify_oi_valid_002",
+    "order_status": "chargeback",
+    "Product": {
+      "product_id": "oi-ia-tool"
+    },
+    "Customer": {
+      "email": "user2@organizacaointeligente.com.br"
+    },
+    "is_test": true
+  }
+}
