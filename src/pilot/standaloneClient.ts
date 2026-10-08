@@ -63,11 +63,12 @@ export interface OiPlan {
 export interface OiCreatePlanInput {
   category: 'rotina' | 'prioridades' | 'documentos' | 'habitos' | 'organizacao'
   objective: string
-  difficulty: 'iniciante' | 'intermediario' | 'avancado'
-  timeAvailable: '5m' | '10m' | '20m' | '45m'
+  difficulty?: 'iniciante' | 'intermediario' | 'avancado'
+  timeAvailable?: '5m' | '10m' | '20m' | '45m'
   targetDeadline?: string
   customNotes?: string
-  requestId?: string
+  requestId: string
+  manual?: boolean
 }
 
 const STANDALONE_STORAGE_KEY = 'oi_standalone_auth_session'
@@ -102,6 +103,18 @@ export class StandaloneOiClient {
 
   getBaseUrl(): string {
     return this.baseUrl
+  }
+
+  clearSession(): void {
+    this.token = null
+    this.currentUser = null
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STANDALONE_STORAGE_KEY)
+      } catch {
+        /* intentionally ignored */
+      }
+    }
   }
 
   setToken(token: string | null, user: OiMembershipUser | null = null) {
@@ -349,10 +362,16 @@ export class StandaloneOiClient {
 
   /**
    * Criar plano via servidor
+   * Suporta repetição idempotente com o mesmo requestId em caso de 202 pending.
    */
-  async createPlan(
-    input: OiCreatePlanInput,
-  ): Promise<{ success: boolean; plan?: OiPlan; quotas?: unknown; error?: string }> {
+  async createPlan(input: OiCreatePlanInput): Promise<{
+    success: boolean
+    pending?: boolean
+    requestId?: string
+    plan?: OiPlan
+    quotas?: unknown
+    error?: string
+  }> {
     if (!this.isConfigured() || !this.token) {
       return { success: false, error: 'Membro não autenticado' }
     }
@@ -361,25 +380,58 @@ export class StandaloneOiClient {
       headers: this.getHeaders(),
       body: JSON.stringify(input),
     })
-    return await res.json().catch(() => ({ success: false, error: 'Erro de comunicação' }))
+    const data = await res.json().catch(() => ({}))
+    if (res.status === 202) {
+      return { success: false, pending: true, requestId: data.requestId || input.requestId }
+    }
+    if (!res.ok) {
+      return { success: false, error: data.message || data.error || 'Falha ao criar plano' }
+    }
+    return {
+      success: true,
+      plan: data.plan,
+      quotas: data.quotas,
+      requestId: data.requestId || input.requestId,
+    }
   }
 
   /**
-   * Ajustar plano existente (cria nova versão v+1 e deduz cota)
+   * Ajustar plano existente (cria nova versão v+1 com ID novo e deduz cota)
    */
   async adjustPlan(
     planId: string,
     instructions: string,
-  ): Promise<{ success: boolean; plan?: OiPlan; quotas?: unknown; error?: string }> {
+    requestId: string,
+    manual?: boolean,
+  ): Promise<{
+    success: boolean
+    pending?: boolean
+    requestId?: string
+    plan?: OiPlan
+    quotas?: unknown
+    error?: string
+  }> {
     if (!this.isConfigured() || !this.token) {
       return { success: false, error: 'Membro não autenticado' }
     }
     const res = await fetch(`${this.baseUrl}/api/oi/plans/adjust`, {
       method: 'POST',
       headers: this.getHeaders(),
-      body: JSON.stringify({ planId, instructions }),
+      body: JSON.stringify({ planId, instructions, requestId, manual }),
     })
-    return await res.json().catch(() => ({ success: false, error: 'Erro de comunicação' }))
+    const data = await res.json().catch(() => ({}))
+    if (res.status === 202) {
+      return { success: false, pending: true, requestId: data.requestId || requestId }
+    }
+    if (!res.ok) {
+      return { success: false, error: data.message || data.error || 'Falha ao ajustar plano' }
+    }
+    return {
+      success: true,
+      plan: data.plan,
+      quotas: data.quotas,
+      requestId: data.requestId || requestId,
+    }
   }
 
   /**
@@ -418,14 +470,20 @@ export class StandaloneOiClient {
     actionsChecklist: OiPlanAction[],
     targetDeadline?: string,
     title?: string,
-  ): Promise<boolean> {
-    if (!this.isConfigured() || !this.token) return false
+    version?: number,
+  ): Promise<{ success: boolean; plan?: OiPlan; error?: string }> {
+    if (!this.isConfigured() || !this.token)
+      return { success: false, error: 'Membro não autenticado' }
     const res = await fetch(`${this.baseUrl}/api/oi/plans/update`, {
       method: 'PATCH',
       headers: this.getHeaders(),
-      body: JSON.stringify({ planId, actionsChecklist, targetDeadline, title }),
+      body: JSON.stringify({ planId, actionsChecklist, targetDeadline, title, version }),
     })
-    return res.ok
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { success: false, error: data.message || data.error || 'Falha ao atualizar plano' }
+    }
+    return { success: true, plan: data.plan }
   }
 
   /**

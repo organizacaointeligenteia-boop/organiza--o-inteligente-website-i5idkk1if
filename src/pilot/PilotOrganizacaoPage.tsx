@@ -16,7 +16,11 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/hooks/use-auth'
 import { resolveAuthorization, type AuthzDecision } from './authContract'
-import { getStandaloneApiUrl, setCustomStandaloneApiUrl } from './standaloneConfig'
+import {
+  getStandaloneApiUrl,
+  setCustomStandaloneApiUrl,
+  isLoopbackEndpoint,
+} from './standaloneConfig'
 import { StandaloneOiClient, type OiCycleStatusResponse, type OiPlan } from './standaloneClient'
 import {
   Download,
@@ -52,13 +56,15 @@ export default function PilotOrganizacaoPage() {
 
   // Formulário de criação de plano guiado
   const [formCategory, setFormCategory] = useState<
-    'rotina' | 'prioridades' | 'documentos' | 'habitos'
+    'rotina' | 'prioridades' | 'documentos' | 'habitos' | 'organizacao'
   >('rotina')
   const [formObjective, setFormObjective] = useState('')
   const [formDifficulty] = useState<'iniciante' | 'intermediario' | 'avancado'>('iniciante')
   const [formTime, setFormTime] = useState<'5m' | '10m' | '20m' | '45m'>('10m')
   const [formDeadline] = useState('')
-  const [formNotes, setFormNotes] = useState('')
+  const [formManual, setFormManual] = useState(true) // modo manual honesto por padrão (saldo US$ 0, sem chave)
+  const [currentRequestId, setCurrentRequestId] = useState(() => crypto.randomUUID())
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
   const [creatingPlan, setCreatingPlan] = useState(false)
   const [actionMessage, setActionMessage] = useState<string | null>(null)
 
@@ -97,20 +103,27 @@ export default function PilotOrganizacaoPage() {
     }
   }
 
-  // Atualizar cliente quando a URL for modificada pelo usuário
+  // Atualizar cliente quando a URL for modificada pelo usuário (apenas na área técnica recolhida; valida loopback e limpa sessão)
   const handleConnectEndpoint = (e: React.FormEvent) => {
     e.preventDefault()
-    setCustomStandaloneApiUrl(standaloneUrlInput)
-    const client = new StandaloneOiClient(standaloneUrlInput.trim())
+    const trimmed = standaloneUrlInput.trim()
+    if (trimmed && !isLoopbackEndpoint(trimmed)) {
+      setActionMessage(
+        'Endpoint inválido: somente endereços locais de loopback (127.0.0.1 ou localhost) são aceitos.',
+      )
+      return
+    }
+    // Ao trocar o endpoint, limpar a sessão/tokens em memória do client isolado
+    standaloneClient.clearSession()
+    setCustomStandaloneApiUrl(trimmed)
+    const client = new StandaloneOiClient(trimmed)
     setStandaloneClient(client)
-    if (standaloneUrlInput.trim()) {
-      setActionMessage(`Endpoint isolado configurado: ${standaloneUrlInput.trim()}`)
-      if (client.getToken()) {
-        refreshCycle()
-      }
+    setCycleStatus(null)
+    setPlans([])
+    setSelectedPlanId(null)
+    if (trimmed) {
+      setActionMessage(`Endpoint isolado configurado: ${trimmed}. Sessão anterior limpa.`)
     } else {
-      setCycleStatus(null)
-      setPlans([])
       setActionMessage('Endpoint removido. Retornado ao modo fail-closed padrão.')
     }
   }
@@ -149,22 +162,41 @@ export default function PilotOrganizacaoPage() {
     if (!standaloneClient) return
     setCreatingPlan(true)
     setActionMessage(null)
+
+    // Usar requestId estável para a ação; manter o mesmo até o sucesso ou em caso de 202 pending
+    const reqId = currentRequestId || crypto.randomUUID()
     const res = await standaloneClient.createPlan({
       category: formCategory,
       objective: formObjective,
       difficulty: formDifficulty,
       timeAvailable: formTime,
       targetDeadline: formDeadline,
-      customNotes: formNotes,
+      requestId: reqId,
+      manual: formManual,
     })
     setCreatingPlan(false)
+
+    if (res.pending) {
+      setActionMessage(
+        'Processamento em andamento (202). Repita o envio mantendo o mesmo requestId.',
+      )
+      return
+    }
+
     if (res.success && res.plan) {
-      setActionMessage(`Plano "${res.plan.title}" criado com sucesso!`)
+      // PATCH ou criação: selecionar response.plan.id e recarregar lista
+      setSelectedPlanId(res.plan.id)
+      setActionMessage(`Plano "${res.plan.title}" criado com sucesso (versão ${res.plan.version})!`)
       setFormObjective('')
-      setFormNotes('')
+      // Sucesso => gerar novo requestId para a PRÓXIMA ação
+      setCurrentRequestId(crypto.randomUUID())
       await refreshCycle()
     } else {
-      setActionMessage(`Falha ao criar plano: ${res.error || 'Erro desconhecido'}`)
+      // Falha real => gerar novo requestId para permitir nova tentativa
+      setCurrentRequestId(crypto.randomUUID())
+      setActionMessage(
+        `Falha ao criar plano: ${res.error || 'Erro desconhecido'}. Esclareça o objetivo ou use o modo manual.`,
+      )
     }
   }
 
@@ -191,11 +223,19 @@ export default function PilotOrganizacaoPage() {
     const updated = plan.actionsChecklist.map((a) =>
       a.id === actionId ? { ...a, done: !a.done } : a,
     )
-    const ok = await standaloneClient.updatePlanChecklist(plan.id, updated)
-    if (ok) {
-      setPlans((prev) =>
-        prev.map((p) => (p.id === plan.id ? { ...p, actionsChecklist: updated } : p)),
-      )
+    // O backend Standalone cria uma nova versão (versão + 1 com ID NOVO) para garantir imutabilidade
+    const res = await standaloneClient.updatePlanChecklist(
+      plan.id,
+      updated,
+      plan.target_deadline,
+      plan.title,
+      plan.version,
+    )
+    if (res.success && res.plan) {
+      setSelectedPlanId(res.plan.id)
+      await refreshCycle()
+    } else if (res.error) {
+      setActionMessage(`Não foi possível atualizar checklist: ${res.error}`)
     }
   }
 
@@ -620,7 +660,8 @@ export default function PilotOrganizacaoPage() {
                             <option value="rotina">Rotina Diária</option>
                             <option value="prioridades">Prioridades e Foco</option>
                             <option value="documentos">Organização de Documentos</option>
-                            <option value="habitos">Estrutura Prática</option>
+                            <option value="habitos">Formação de Hábitos</option>
+                            <option value="organizacao">Organização Geral</option>
                           </select>
                         </div>
                         <div>
@@ -640,24 +681,49 @@ export default function PilotOrganizacaoPage() {
                         </div>
                       </div>
                       <div>
-                        <Label className="text-[11px]">Objetivo Específico</Label>
+                        <Label className="text-[11px]">
+                          Objetivo Específico (3 a 1000 caracteres)
+                        </Label>
                         <Input
                           placeholder="Ex.: Organizar meus recibos de despesas do mês"
                           value={formObjective}
                           onChange={(e) => setFormObjective(e.target.value)}
                           className="text-xs h-8"
                           required
+                          minLength={3}
+                          maxLength={1000}
                         />
                       </div>
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={creatingPlan}
-                        className="text-xs bg-slate-900 text-white"
-                      >
-                        <Plus className="w-3.5 h-3.5 mr-1" />
-                        {creatingPlan ? 'Processando...' : 'Gerar Plano com Biblioteca Revisável'}
-                      </Button>
+                      <div className="flex items-center gap-2 pt-1">
+                        <input
+                          type="checkbox"
+                          id="form-manual"
+                          checked={formManual}
+                          onChange={(e) => setFormManual(e.target.checked)}
+                          className="rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                        />
+                        <Label
+                          htmlFor="form-manual"
+                          className="text-[11px] text-slate-700 cursor-pointer"
+                        >
+                          Modo manual honesto (modelos revisados, sem consulta a IA externa / saldo
+                          US$ 0)
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={creatingPlan}
+                          className="text-xs bg-slate-900 text-white"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" />
+                          {creatingPlan ? 'Processando...' : 'Gerar Plano com Biblioteca Revisável'}
+                        </Button>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          ID: {currentRequestId.slice(0, 8)}...
+                        </span>
+                      </div>
                     </form>
                   )}
 
@@ -668,53 +734,72 @@ export default function PilotOrganizacaoPage() {
                         Meus Planos ({plans.length})
                       </div>
                       <div className="space-y-2">
-                        {plans.map((p) => (
-                          <div
-                            key={p.id}
-                            className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-2"
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className="font-bold text-slate-900">
-                                {p.title} (v{p.version})
-                              </span>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleExportPdf(p.id)}
-                                className="text-[11px] h-7"
-                              >
-                                <FileText className="w-3 h-3 mr-1" />
-                                PDF
-                              </Button>
-                            </div>
-                            <p className="text-slate-600 text-[11px]">{p.strategySummary}</p>
-                            <div className="space-y-1 pt-1">
-                              {p.actionsChecklist.map((act) => (
-                                <button
-                                  key={act.id}
-                                  type="button"
-                                  onClick={() => handleToggleChecklist(p, act.id)}
-                                  className="w-full flex items-center gap-2 text-left hover:bg-slate-50 p-1 rounded"
-                                >
-                                  {act.done ? (
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                  ) : (
-                                    <Circle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        {plans.map((p) => {
+                          const isSelected = selectedPlanId === p.id
+                          return (
+                            <div
+                              key={p.id}
+                              className={`p-3 bg-white rounded-xl border text-xs space-y-2 transition-colors ${
+                                isSelected
+                                  ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/20'
+                                  : 'border-slate-200'
+                              }`}
+                              onClick={() => setSelectedPlanId(p.id)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-slate-900 flex items-center gap-2">
+                                  {p.title} (v{p.version})
+                                  {isSelected && (
+                                    <span className="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-normal">
+                                      selecionado
+                                    </span>
                                   )}
-                                  <span
-                                    className={
-                                      act.done
-                                        ? 'line-through text-slate-400 text-[11px]'
-                                        : 'text-slate-700 text-[11px]'
-                                    }
+                                </span>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(ev) => {
+                                    ev.stopPropagation()
+                                    handleExportPdf(p.id)
+                                  }}
+                                  className="text-[11px] h-7"
+                                >
+                                  <FileText className="w-3 h-3 mr-1" />
+                                  PDF
+                                </Button>
+                              </div>
+                              <p className="text-slate-600 text-[11px]">{p.strategySummary}</p>
+                              <div className="space-y-1 pt-1">
+                                {p.actionsChecklist.map((act) => (
+                                  <button
+                                    key={act.id}
+                                    type="button"
+                                    onClick={(ev) => {
+                                      ev.stopPropagation()
+                                      handleToggleChecklist(p, act.id)
+                                    }}
+                                    className="w-full flex items-center gap-2 text-left hover:bg-slate-50 p-1 rounded"
                                   >
-                                    {act.text}
-                                  </span>
-                                </button>
-                              ))}
+                                    {act.done ? (
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                    ) : (
+                                      <Circle className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    )}
+                                    <span
+                                      className={
+                                        act.done
+                                          ? 'line-through text-slate-400 text-[11px]'
+                                          : 'text-slate-700 text-[11px]'
+                                      }
+                                    >
+                                      {act.text}
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     </div>
                   )}
@@ -969,7 +1054,7 @@ export default function PilotOrganizacaoPage() {
 
         {/* Rodapé da página */}
         <footer className="pt-4 border-t border-slate-200 text-xs text-slate-500 space-y-2 text-center">
-          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.72</p>
+          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.73</p>
           <p className="text-[11px] text-slate-400">
             Ambiente exclusivo de visualização prévia da área paga.
           </p>

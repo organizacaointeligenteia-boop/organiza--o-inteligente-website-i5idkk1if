@@ -1,4 +1,3 @@
-// standalone-backend/config/standalone.config.json
 {
   "port": 8090,
   "kiwify": {

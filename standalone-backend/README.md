@@ -1,129 +1,25 @@
-# Backend Standalone Executável · Ferramenta de IA de Organização Inteligente (OI)
+# Organização Inteligente - backend local de testes
 
-Este pacote contém o backend completo e isolado para execução LOCAL e controlada pelo proprietário do produto pago "Ferramenta de IA da Organização Inteligente" (pagamento único por 21 dias de uso da ferramenta, sem renovação e sem promessa de hábito).
+Pagamento único por 21 dias de uso; 7 dias para iniciar e 30 dias só para resultados após expirar. Vários planos, sem renovação automática e sem promessa de hábito. Preço indefinido, vendas reais bloqueadas.
 
-> **Aviso de Isolamento:** Este backend NUNCA deve ser misturado com o PocketBase compartilhado do website público ou do Kit. Ele roda em sua própria instância e armazena os dados localmente no diretório `pb_data/`.
+## Executar
 
----
+Use o PocketBase oficial 0.40.5 na raiz e execute `bash scripts/run-local.sh`. O servidor fica apenas em `127.0.0.1:8090`. Não aplicar estas migrações no backend compartilhado do GoSkip.
 
-## 1. Conteúdo do Pacote
+`OI_MODE=test` é obrigatório para os eventos de pagamento simulados. Nenhum evento configura cobrança real. Segredo de teste e produto sintético ficam no processo. Chave Jev real não está incluída.
 
-- `pb_migrations/`:
-  - `1740000001_create_oi_schema.js`: Criação das coleções `oi_memberships` (auth), `oi_orders`, `oi_cycles`, `oi_quotas`, `oi_plans` e `oi_ai_audit`.
-  - `1740000002_seed_standalone_demo.js`: Seed idempotente de admin sintético e dois usuários sintéticos para testes.
-- `pb_hooks/`:
-  - `oi_webhook_kiwify.pb.js`: Webhook autenticado com token, correlação de produto e conta, tombstone de refund pré-aprovação, prevenção de ressurreição e ciclo ativo que não é estendido por nova compra.
-  - `oi_cycle_routes.pb.js`: Gestão atômica do ciclo de 21 dias com transação (`GET /api/oi/cycle/status`, `POST /api/oi/cycle/start`), expurgo COMPLETO de dados de planos após 30 dias da expiração. Header `x-oi-test-time-ms` foi REMOVIDO (clock exclusivamente do servidor local).
-  - `oi_plans_routes.pb.js`: Criação, ajuste, listagem e atualização controlada de planos (`POST /api/oi/plans/create`, `POST /api/oi/plans/adjust`, `GET /api/oi/plans/list`, `PATCH /api/oi/plans/update`), bloqueio TOTAL de CRUD direto em `oi_plans`, controle atômico de cotas (5/dia e 50/ciclo) fora de chamadas de rede, e exportação de PDF (`GET /api/oi/plans/export-pdf`) com UTF-8 e acentos em português.
-  - `oi_auth_routes.pb.js`: Rotas complementares de autenticação: cadastro com `verified=false` e `role='member'` fixo, verificação com token de uso único com TTL (`POST /api/oi/auth/verify-email`), login estrito com `verified=true`, reset com inbox local privado (`pb_data/local_inbox/emails.log`), logout com invalidação de sessão e rotação de `tokenKey`.
-*Nota crítica: arquivos terminam em `.pb.js` para garantir carregamento automático no PocketBase v0.36+ / v0.40.5.*
-- `config/`: Configurações e parâmetros operacionais (pagamento único por 21 dias, sem renovação).
-- `scripts/`: Scripts para inicialização (`run-local.sh`, `run-local.bat`) e testes de integração HTTP reais (`run-integration-tests.sh`, `run-integration-tests.mjs`).
-- `fixtures/`: Payloads sintéticos de teste para simulação Kiwify e Jev.
+## Testes
 
----
+`node scripts/run-integration-tests.mjs` executa a suíte Python local. Alternativa: `python3 scripts/validate_http.py`. Dependência: Python 3 padrão, sem pacotes externos. O alvo precisa ser loopback e a base deve ser descartável de testes. A suíte move o relógio privado e expurga somente planos sintéticos.
 
-## 2. Como Executar Localmente
+`OI_STANDALONE_URL` configura a porta local; `OI_PB_DATA_DIR` configura o diretório de dados do servidor de testes, por padrão `pb_data`. Verificação/reset são reais, com tokens de uso único na caixa local privada `<data-dir>/local_inbox/emails.log`, sem SMTP externo.
 
-### Pré-requisitos
-1. Baixar o executável oficial do PocketBase (compatível com a versão 0.40.5 darwin_arm64 ou compatível com seu sistema operacional) em:
-   https://pocketbase.io/docs/
-2. Colocar o arquivo executável (`pocketbase` no Linux/macOS ou `pocketbase.exe` no Windows) dentro desta pasta raiz do pacote `standalone-backend/`.
+`node scripts/test-jev-contract.mjs` valida o contrato com fixtures, sem chamadas ao provedor. API Jev real permanece pendente de chave/saldo.
 
-### No macOS / Linux (ARM64 / x86_64):
-```bash
-chmod +x ./pocketbase
-chmod +x ./scripts/run-local.sh
-chmod +x ./scripts/run-integration-tests.sh
-./scripts/run-local.sh
-```
+## Contrato da interface
 
-### No Windows:
-```cmd
-scripts\run-local.bat
-```
+Login em `/api/oi/auth/login` devolve token nativo do PocketBase. Cadastro e recuperação usam as rotas `/api/oi/auth/*`. A recuperação confirma com `{token,newPassword}`. Cada criar/ajustar exige `requestId` estável; repetir a mesma operação devolve o mesmo resultado sem consumir outra cota. Status 202 indica operação em andamento; repetir o mesmo pedido com o mesmo id, sem trocar objetivo.
 
-O servidor iniciará em `http://127.0.0.1:8090`. O painel de administração local estará disponível em `http://127.0.0.1:8090/_/`.
-Aviso de honestidade: o servidor NÃO roda nem rodou em nuvem/neste ambiente; ele é exclusivamente executado de forma local pelo proprietário.
+CRUD de planos: `/api/oi/plans/list`, `/get?planId=...`, `/create`, `/adjust`, `PATCH /update`, `/export-pdf?planId=...`. Criar/ajustar consomem cota; editar/checklist/export não consomem. Edição cria versão nova com id novo: a interface deve atualizar a seleção usando `response.plan.id`. Resultado precisa ser lido pelas rotas protegidas, nunca diretamente das coleções.
 
----
-
-## 3. Contas Sintéticas Disponíveis para Testes
-
-- **Administrador:**
-  - Email: `admin-oi@organizacaointeligente.com.br`
-  - Senha: `Skip@Pass`
-  - Role: `admin`
-
-- **Membro de Teste 1:**
-  - Email: `user1@organizacaointeligente.com.br`
-  - Senha: `Skip@Pass`
-  - Role: `member`
-
-- **Membro de Teste 2:**
-  - Email: `user2@organizacaointeligente.com.br`
-  - Senha: `Skip@Pass`
-  - Role: `member`
-
----
-
-## 4. Testando o Webhook Kiwify Localmente
-
-Simular compra aprovada da Ferramenta de IA (produto `oi-ia-tool`):
-```bash
-curl -X POST "http://127.0.0.1:8090/api/oi/webhook/kiwify?token=oi-kiwify-test-secret" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "order_id": "test_order_001",
-    "order_status": "paid",
-    "order_amount": 9700,
-    "Product": {
-      "product_id": "oi-ia-tool",
-      "product_name": "Ferramenta de IA OI (21 Dias)"
-    },
-    "Customer": {
-      "email": "user1@organizacaointeligente.com.br",
-      "full_name": "Cliente 1 Sintético"
-    }
-  }'
-```
-
-Simular compra do Kit (que NÃO libera a ferramenta de IA):
-```bash
-curl -X POST "http://127.0.0.1:8090/api/oi/webhook/kiwify?token=oi-kiwify-test-secret" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "order_id": "kit_order_999",
-    "order_status": "paid",
-    "Product": {
-      "product_id": "kit-organizacao-inteligente",
-      "product_name": "Kit de Organização Inteligente"
-    },
-    "Customer": {
-      "email": "user1@organizacaointeligente.com.br"
-    }
-  }'
-# Retorno esperado: {"received":true,"ignored":true,"reason":"Produto diferente da Ferramenta de IA da OI..."}
-```
-
-Simular Reembolso (revoga acesso imediatamente):
-```bash
-curl -X POST "http://127.0.0.1:8090/api/oi/webhook/kiwify?token=oi-kiwify-test-secret" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "order_id": "test_order_001",
-    "order_status": "refunded",
-    "Product": {
-      "product_id": "oi-ia-tool"
-    }
-  }'
-# Ciclo é imediatamente marcado como 'revoked'
-```
-
----
-
-## 5. Como Conectar o Frontend da Preview ao Servidor Local
-
-No frontend do projeto React:
-Defina a variável `VITE_STANDALONE_OI_API_URL` para o endereço do seu backend local (ex: `http://127.0.0.1:8090`).
-Se essa variável estiver vazia ou não configurada, o frontend permanece no modo **fail closed** (apresentação restrita com aviso honesto de que a ferramenta está em preparação).
+O PDF é um documento real, com Helvetica/WinAnsi para acentos portugueses e paginação. Sem registros/segredos/reais no pacote. Dados e tokens de sessão locais NÃO devem ser exportados.

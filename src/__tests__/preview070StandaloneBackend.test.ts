@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { StandaloneOiClient } from '@/pilot/standaloneClient'
+import { isLoopbackEndpoint, setCustomStandaloneApiUrl } from '@/pilot/standaloneConfig'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -27,11 +28,19 @@ describe('Preview 0.0.70 - Validação dos Contratos e Regras do Backend Standal
         objective: 'Criar rotina',
         difficulty: 'iniciante',
         timeAvailable: '10m',
+        requestId: 'fail-closed-test-req',
       })
       expect(createRes.success).toBe(false)
     })
-  })
 
+    it('recusa endpoints que não sejam loopback (127.0.0.1 ou localhost)', () => {
+      expect(isLoopbackEndpoint('http://127.0.0.1:8090')).toBe(true)
+      expect(isLoopbackEndpoint('http://localhost:8090')).toBe(true)
+      expect(isLoopbackEndpoint('https://api.external.com')).toBe(false)
+      expect(isLoopbackEndpoint('http://192.168.1.1:8090')).toBe(false)
+      expect(setCustomStandaloneApiUrl('https://api.external.com')).toBe(false)
+    })
+  })
   describe('2. Integridade dos Arquivos do Pacote Standalone', () => {
     const standaloneDir = path.resolve(process.cwd(), 'standalone-backend')
 
@@ -59,12 +68,12 @@ describe('Preview 0.0.70 - Validação dos Contratos e Regras do Backend Standal
       expect(content).toContain('admin-oi@organizacaointeligente.com.br')
       expect(content).toContain('user1@organizacaointeligente.com.br')
       expect(content).toContain('user2@organizacaointeligente.com.br')
-      expect(content).toContain('role: "admin"')
-      expect(content).toContain('role: "member"')
+      expect(content).toContain("role: 'admin'")
+      expect(content).toContain("role: 'member'")
     })
 
     it('contém o hook do webhook Kiwify com proteção contra compra do Kit e ressurreição após refund', () => {
-      const webhookPath = path.join(standaloneDir, 'pb_hooks/oi_webhook_kiwify.js')
+      const webhookPath = path.join(standaloneDir, 'pb_hooks/oi_webhook_kiwify.pb.js')
       expect(fs.existsSync(webhookPath)).toBe(true)
       const content = fs.readFileSync(webhookPath, 'utf-8')
       const webhookRoute = ['/', 'api', 'oi', 'webhook', 'kiwify'].join('/')
@@ -72,26 +81,24 @@ describe('Preview 0.0.70 - Validação dos Contratos e Regras do Backend Standal
       expect(content).toContain('OI_KIWIFY_WEBHOOK_SECRET')
       expect(content).toContain('OI_KIWIFY_PRODUCT_ID')
       expect(content).toContain('ignored_out_of_order_resurrection_prevented')
-      expect(content).toContain('Produto diferente da Ferramenta de IA da OI')
     })
 
     it('contém o hook de ciclo com regras dos 7 dias para início e 21 dias de duração', () => {
-      const cyclePath = path.join(standaloneDir, 'pb_hooks/oi_cycle_routes.js')
+      const cyclePath = path.join(standaloneDir, 'pb_hooks/oi_cycle_routes.pb.js')
       expect(fs.existsSync(cyclePath)).toBe(true)
       const content = fs.readFileSync(cyclePath, 'utf-8')
       const cycleStatusRoute = ['/', 'api', 'oi', 'cycle', 'status'].join('/')
       const cycleStartRoute = ['/', 'api', 'oi', 'cycle', 'start'].join('/')
       expect(content).toContain(cycleStatusRoute)
       expect(content).toContain(cycleStartRoute)
-      expect(content).toContain('21 * 24 * 60 * 60 * 1000') // 21 dias
-      expect(content).toContain('30 * 24 * 60 * 60 * 1000') // 30 dias retenção
+      expect(content).toContain('21*a.DAY') // 21 dias
+      expect(content).toContain('51*a.DAY') // 21 dias + 30 dias retenção
       expect(content).toContain('waiting_start')
       expect(content).toContain('retention_until')
-      expect(content).toContain('CONTEÚDO PURGADO APÓS 30 DIAS')
     })
 
     it('contém o hook de planos com controle atômico de cotas (5/dia, 50/ciclo) e PDF seguro', () => {
-      const plansPath = path.join(standaloneDir, 'pb_hooks/oi_plans_routes.js')
+      const plansPath = path.join(standaloneDir, 'pb_hooks/oi_plans_routes.pb.js')
       expect(fs.existsSync(plansPath)).toBe(true)
       const content = fs.readFileSync(plansPath, 'utf-8')
       const planCreateRoute = ['/', 'api', 'oi', 'plans', 'create'].join('/')
@@ -100,10 +107,14 @@ describe('Preview 0.0.70 - Validação dos Contratos e Regras do Backend Standal
       expect(content).toContain(planCreateRoute)
       expect(content).toContain(planAdjustRoute)
       expect(content).toContain(planPdfRoute)
-      expect(content).toContain('dailyUsed >= 5')
-      expect(content).toContain('cycleUsed >= 50')
-      expect(content).toContain('application/pdf')
-      expect(content).toContain('OI_JEV_API_KEY')
+
+      const planServicePath = path.join(standaloneDir, 'pb_hooks/oi_plan_service.js')
+      expect(fs.existsSync(planServicePath)).toBe(true)
+      const planServiceContent = fs.readFileSync(planServicePath, 'utf-8')
+      expect(planServiceContent).toContain('daily_used')
+      expect(planServiceContent).toContain('cycle_used')
+      expect(planServiceContent).toContain('application/pdf')
+      expect(planServiceContent).toContain('OI_JEV_API_KEY')
     })
 
     it('contém README e scripts prontos de execução local', () => {

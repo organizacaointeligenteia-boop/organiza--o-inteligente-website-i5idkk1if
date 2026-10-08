@@ -28,6 +28,7 @@ if [ ! -f "$PB_BIN" ]; then
 fi
 
 # Configurações padrão de ambiente para teste local
+export OI_MODE=test
 export OI_KIWIFY_WEBHOOK_SECRET="${OI_KIWIFY_WEBHOOK_SECRET:-oi-kiwify-test-secret}"
 export OI_KIWIFY_PRODUCT_ID="${OI_KIWIFY_PRODUCT_ID:-oi-ia-tool}"
 export OI_ALLOW_TEST_CLOCK="${OI_ALLOW_TEST_CLOCK:-true}"

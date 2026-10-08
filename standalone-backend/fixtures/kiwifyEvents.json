@@ -1,4 +1,3 @@
-// standalone-backend/fixtures/kiwifyEvents.json
 {
   "approvedAiOrder": {
     "order_id": "kiwify_oi_valid_001",

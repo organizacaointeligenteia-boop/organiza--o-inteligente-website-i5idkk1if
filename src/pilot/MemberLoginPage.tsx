@@ -16,7 +16,11 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StandaloneOiClient } from './standaloneClient'
-import { getStandaloneApiUrl, setCustomStandaloneApiUrl } from './standaloneConfig'
+import {
+  getStandaloneApiUrl,
+  setCustomStandaloneApiUrl,
+  isLoopbackEndpoint,
+} from './standaloneConfig'
 
 export default function MemberLoginPage() {
   const navigate = useNavigate()
@@ -78,14 +82,25 @@ export default function MemberLoginPage() {
     }
   }, [])
 
-  // Atualizar cliente caso a URL seja salva
+  // Atualizar cliente caso a URL seja salva (rejeita não loopback e limpa sessão)
   const handleUpdateUrl = (e: React.FormEvent) => {
     e.preventDefault()
+    const trimmed = standaloneUrl.trim()
+    if (trimmed && !isLoopbackEndpoint(trimmed)) {
+      setFeedback({
+        type: 'error',
+        message:
+          'Endpoint inválido: apenas endereços locais loopback (127.0.0.1 ou localhost) são permitidos.',
+      })
+      return
+    }
+    client.clearSession()
     setCustomStandaloneApiUrl(standaloneUrl)
-    setClient(new StandaloneOiClient(standaloneUrl))
+    const newClient = new StandaloneOiClient(standaloneUrl)
+    setClient(newClient)
     setFeedback({
       type: 'success',
-      message: `Endpoint isolado atualizado para: ${standaloneUrl || '(vazio)'}`,
+      message: `Endpoint isolado atualizado para: ${standaloneUrl || '(vazio)'}. Sessão anterior limpa.`,
     })
   }
 

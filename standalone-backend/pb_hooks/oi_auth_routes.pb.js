@@ -72,7 +72,7 @@ routerAdd('POST', '/api/oi/auth/signup', (e) => {
 
   // Gravar no inbox local em arquivo privado acessível apenas ao processo/admin
   try {
-    const inboxDir = 'pb_data/local_inbox'
+    const inboxDir = $app.dataDir() + '/local_inbox'
     $os.mkdirAll(inboxDir, 0o700)
     const inboxPath = inboxDir + '/emails.log'
     const entry =
@@ -204,15 +204,7 @@ routerAdd('POST', '/api/oi/auth/login', (e) => {
   }
 
   // Gerar token de autenticação PocketBase oficial para oi_memberships
-  const token = $security.createJWT(
-    {
-      id: member.id,
-      collectionId: member.collection().id,
-      tokenKey: member.tokenKey(),
-    },
-    $os.getenv('PB_ENCRYPTION_KEY') || 'oi-standalone-session-key',
-    7 * 24 * 60 * 60, // 7 dias
-  )
+  const token = member.newAuthToken()
 
   return e.json(200, {
     success: true,
@@ -268,7 +260,7 @@ routerAdd('POST', '/api/oi/auth/reset-password-request', (e) => {
       $app.save(tokenRec)
 
       // Gravar no inbox local em arquivo privado acessível somente ao processo/admin local
-      const inboxDir = 'pb_data/local_inbox'
+      const inboxDir = $app.dataDir() + '/local_inbox'
       $os.mkdirAll(inboxDir, 0o700)
       const inboxPath = inboxDir + '/emails.log'
       const entry =
