@@ -105,7 +105,7 @@ export default function PilotOrganizacaoPage() {
               </div>
             ) : (
               <Link
-                to="/login"
+                to="/piloto-organizacao/login"
                 className="inline-flex items-center gap-1.5 text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
               >
                 <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
@@ -254,15 +254,15 @@ export default function PilotOrganizacaoPage() {
 
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link
-                    to="/login"
+                    to="/piloto-organizacao/login"
                     className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 px-4 py-2.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
                   >
-                    Ir para tela de Login
+                    Entrar como membro
                     <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </Link>
                   <p className="text-[11px] text-slate-500">
-                    O login utiliza autenticação real do sistema. Não há liberação simulada por
-                    links ou formulários fictícios.
+                    Acesso exclusivo para conferência de conta. Não há liberação fictícia ou
+                    automática.
                   </p>
                 </div>
               </div>
@@ -296,12 +296,11 @@ export default function PilotOrganizacaoPage() {
                 <div className="p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 space-y-1">
                   <div className="font-semibold text-slate-900 flex items-center gap-1.5">
                     <Info className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
-                    Status da Liberação:
+                    Situação da liberação:
                   </div>
                   <p className="text-slate-600 leading-relaxed">
-                    Nenhum direito de acesso pago ativo foi localizado para o usuário{' '}
-                    <code>{user?.id}</code>. A ferramenta permanece bloqueada por padrão
-                    (fail-closed) até a publicação oficial das regras de assinatura e checkout.
+                    Sua conta está identificada com sucesso, mas a liberação da ferramenta permanece
+                    fechada até a definição formal das regras de acesso pago e checkout.
                   </p>
                 </div>
               </div>
@@ -330,26 +329,25 @@ export default function PilotOrganizacaoPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 shrink-0" />
               <span>
                 <strong>Preço e periodicidade a definir:</strong> Nenhuma condição comercial foi
-                estipulada de forma definitiva. Valores, planos (mensal, anual ou vitalício) e
-                formas de pagamento serão anunciados nos canais oficiais.
+                estipulada de forma definitiva. Valores, planos e formas de pagamento serão
+                anunciados nos canais oficiais.
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 shrink-0" />
               <span>
-                <strong>Segurança e integridade:</strong> O acesso não pode ser concedido por
-                parâmetros de URL, armazenamento local (localStorage) ou atalhos não confirmados.
-                Toda liberação dependerá de conferência formal no backend.
+                <strong>Acesso pago confirmado:</strong> Apenas contas com pagamento confirmado
+                terão acesso à ferramenta quando a preparação for concluída.
               </span>
             </li>
           </ul>
         </section>
 
-        {/* Rodapé técnico da página */}
+        {/* Rodapé da página */}
         <footer className="pt-4 border-t border-slate-200 text-xs text-slate-500 space-y-2 text-center">
-          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.68</p>
+          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.69</p>
           <p className="text-[11px] text-slate-400">
-            Este módulo opera estritamente em conformidade com as regras de negação por padrão.
+            Ambiente exclusivo de visualização prévia da área paga.
           </p>
         </footer>
       </main>

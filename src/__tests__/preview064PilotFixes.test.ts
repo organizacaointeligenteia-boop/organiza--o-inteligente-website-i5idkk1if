@@ -77,13 +77,13 @@ describe('Pilot Frontend 0.0.64 - Regressões e Correções de QA', () => {
       expect(pageSource).not.toContain('Teste do adaptador Jev (simulado)')
     })
 
-    it('PilotOrganizacaoPage exige login oficial ou aponta para rota real /login', () => {
+    it('PilotOrganizacaoPage exige login oficial ou aponta para rota de membros /piloto-organizacao/login', () => {
       const pageSource = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
       )
 
-      expect(pageSource).toContain('to="/login"')
+      expect(pageSource).toContain('to="/piloto-organizacao/login"')
       expect(pageSource).toContain('useAuth()')
       expect(pageSource).toContain('resolveAuthorization')
     })
