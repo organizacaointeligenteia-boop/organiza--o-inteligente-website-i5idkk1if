@@ -541,7 +541,7 @@ describe('Preview 0.0.66 / 0.0.67 - Adaptador TypeSafe / Jev (Contrato Puro Offl
     })
   })
 
-  describe('5. Ausência de Rede, Credenciais e Preservação da UI do Piloto', () => {
+  describe('5. Ausência de Rede, Credenciais e Preservação dos Módulos Técnicos Offline', () => {
     it('os arquivos do adaptador Jev NÃO contêm chamadas de fetch, axios nem URLs com api-keys', () => {
       const adapterCode = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/jevAdapter.ts'),
@@ -566,29 +566,20 @@ describe('Preview 0.0.66 / 0.0.67 - Adaptador TypeSafe / Jev (Contrato Puro Offl
       }
     })
 
-    it('PilotOrganizacaoPage.tsx inclui o aviso obrigatório sobre API Jev não conectada', () => {
-      const pageCode = fs.readFileSync(
-        path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
-        'utf-8',
-      )
-
-      expect(pageCode).toContain(
-        'Contrato preparado. API Jev não conectada. Não mede acurácia do modelo',
-      )
-      expect(pageCode).toContain('Teste do adaptador Jev (simulado)')
-      expect(pageCode).toContain('Executar testes simulados')
+    it('os módulos de contrato, adaptador e fixtures permanecem preservados no repositório para testes sintéticos e evolução futura', () => {
+      expect(fs.existsSync(path.resolve(process.cwd(), 'src/pilot/jevContract.ts'))).toBe(true)
+      expect(fs.existsSync(path.resolve(process.cwd(), 'src/pilot/jevAdapter.ts'))).toBe(true)
+      expect(fs.existsSync(path.resolve(process.cwd(), 'src/pilot/jevFixtures.ts'))).toBe(true)
     })
 
-    it('o fluxo principal do piloto continua usando classifier.ts (demo-local) para o usuário', () => {
+    it('a UI pública do piloto NÃO expõe mais botões de execução nem painel de auto-liberação de fixtures sintéticas', () => {
       const pageCode = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
       )
 
-      expect(pageCode).toContain('classifyFreeText(raw)')
-      expect(pageCode).toContain(
-        "import { classifyFreeText, type ClassificationOutput } from './classifier'",
-      )
+      expect(pageCode).not.toContain('Executar testes simulados')
+      expect(pageCode).not.toContain('Teste do adaptador Jev (simulado)')
     })
   })
 })

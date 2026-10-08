@@ -1,75 +1,24 @@
-import { useState, useId, useEffect, useRef } from 'react'
+import { useEffect, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Sparkles,
-  RotateCcw,
-  CheckCircle2,
-  Clock,
-  Layers,
-  ArrowRight,
   ShieldCheck,
-  AlertCircle,
-  X,
-  Compass,
-  Calendar,
-  BookOpen,
+  Lock,
+  UserCheck,
+  Clock,
+  ArrowRight,
   Info,
-  ChevronDown,
-  ChevronUp,
-  Cpu,
+  LogOut,
+  LogIn,
   AlertTriangle,
-  Check,
+  Layers,
+  FileCheck2,
 } from 'lucide-react'
-import type {
-  PilotPath,
-  PilotTopic,
-  PilotTimeAvailable,
-  PilotPreferredFormat,
-  PilotChoices,
-  EditorialModelKey,
-} from './types'
-import {
-  EDITORIAL_CATALOG,
-  KIT_SAMPLES,
-  TOPIC_LABELS,
-  TIME_LABELS,
-  TIME_MINUTES_MAP,
-  FORMAT_LABELS,
-  resolveSuggestedModel,
-  buildRoutineSteps,
-  buildGuidanceSteps,
-} from './catalog'
-import { classifyFreeText, type ClassificationOutput } from './classifier'
-import { runSyntheticFixturesSimulation, type FixtureRunResult } from './jevFixtures'
-import { JEV_PROVISIONAL_CONFIDENCE_THRESHOLD } from './jevContract'
+import { useAuth } from '@/hooks/use-auth'
+import { resolveAuthorization, type AuthzDecision } from './authContract'
 
 export default function PilotOrganizacaoPage() {
-  // Pure local React states
-  const [selectedPath, setSelectedPath] = useState<PilotPath | null>(null)
-  const [choices, setChoices] = useState<PilotChoices>({})
-  const [usePersonalization, setUsePersonalization] = useState<boolean>(true)
-  const [userInterests, setUserInterests] = useState<string[]>([])
-  const [checkedSteps, setCheckedSteps] = useState<Record<string, boolean>>({})
-  const [previewModelKey, setPreviewModelKey] = useState<EditorialModelKey>('priorities')
-
-  // Textarea state
-  const [freeText, setFreeText] = useState<string>('')
-  const [classificationResult, setClassificationResult] = useState<ClassificationOutput | null>(
-    null,
-  )
-
-  // Technical section: Jev Adapter offline simulation
-  const [isJevSectionOpen, setIsJevSectionOpen] = useState<boolean>(false)
-  const [simulationResults, setSimulationResults] = useState<FixtureRunResult[] | null>(null)
-
-  // Status notification for screen readers
-  const [liveAnnouncement, setLiveAnnouncement] = useState<string>('')
-
-  // Accessible ref for moving focus after text submit
-  const submitFeedbackRef = useRef<HTMLHeadingElement | HTMLDivElement | null>(null)
-
-  // Unique accessible IDs
-  const textInputId = useId()
-  const personalizeCheckboxId = useId()
+  const { user, isAuthenticated, loading, signOut } = useAuth()
 
   // Apply noindex, nofollow solely for this route
   useEffect(() => {
@@ -84,7 +33,7 @@ export default function PilotOrganizacaoPage() {
     robotsMeta.setAttribute('content', 'noindex, nofollow')
 
     const prevTitle = document.title
-    document.title = 'Piloto de Demonstração · Organização Inteligente'
+    document.title = 'Ferramenta de IA · Organização Inteligente'
 
     return () => {
       document.title = prevTitle
@@ -98,178 +47,17 @@ export default function PilotOrganizacaoPage() {
     }
   }, [])
 
-  // Helper to add unique local interest
-  const addUniqueInterest = (label: string) => {
-    if (!usePersonalization) return
-    setUserInterests((prev) => {
-      if (prev.includes(label)) return prev
-      return [...prev, label]
+  // Resolvedor estrito de autorização:
+  // Usa a autenticação real do PocketBase via useAuth.
+  // Como não há coleção de entitlements no backend compartilhado e alterações são vedadas,
+  // entitlement permanece undefined -> fail-closed com estado honesto (anonymous ou authenticated-unpaid).
+  const authzDecision: AuthzDecision = useMemo(() => {
+    return resolveAuthorization({
+      isAuthenticated,
+      user,
+      entitlement: undefined, // fail closed: sem fonte real de entitlement no momento
     })
-  }
-
-  // Remove local interest
-  const removeInterest = (label: string) => {
-    setUserInterests((prev) => prev.filter((item) => item !== label))
-    setLiveAnnouncement(`Interesse ${label} removido.`)
-  }
-
-  // Handle opt-out of personalization
-  const handleTogglePersonalization = (checked: boolean) => {
-    setUsePersonalization(checked)
-    if (!checked) {
-      // Clear all markings, text, interests, sample selection, pendencies and choices
-      setUserInterests([])
-      setCheckedSteps({})
-      setChoices({})
-      setClassificationResult(null)
-      setFreeText('')
-      setPreviewModelKey('priorities')
-      setLiveAnnouncement('Personalização desativada. Preferências da sessão foram limpas.')
-    } else {
-      setLiveAnnouncement('Personalização da sessão ativada.')
-    }
-  }
-
-  // Handle Global Reset ("Recomeçar")
-  const handleResetAll = () => {
-    setSelectedPath(null)
-    setChoices({})
-    setUserInterests([])
-    setCheckedSteps({})
-    setPreviewModelKey('priorities')
-    setFreeText('')
-    setClassificationResult(null)
-    setSimulationResults(null)
-    setLiveAnnouncement(
-      'Demonstração reiniciada. Todos os passos e seleções voltaram ao estado inicial.',
-    )
-  }
-
-  // Handle running local synthetic simulation
-  const handleRunSimulation = () => {
-    const results = runSyntheticFixturesSimulation()
-    setSimulationResults(results)
-    setLiveAnnouncement(
-      `Testes simulados do adaptador Jev concluídos com sucesso. ${results.length} casos sintéticos avaliados localmente.`,
-    )
-  }
-
-  // Handle Path change (idempotent if already active)
-  const handleSelectPath = (path: PilotPath) => {
-    const pathLabels: Record<PilotPath, string> = {
-      routine: 'Organizar minha rotina',
-      kit: 'Conhecer a ferramenta / kit',
-      guidance: 'Receber orientação de uso',
-    }
-
-    if (selectedPath === path) {
-      // Idempotent: preserve current choices and checked steps
-      setClassificationResult(null)
-      setLiveAnnouncement(`Caminho mantido: ${pathLabels[path]}`)
-      return
-    }
-
-    setSelectedPath(path)
-    setClassificationResult(null) // clear any pending banner
-    setCheckedSteps({}) // reset steps only on path switch
-
-    addUniqueInterest(pathLabels[path])
-    setLiveAnnouncement(`Caminho selecionado: ${pathLabels[path]}`)
-  }
-
-  // Choice handlers
-  const handleSelectTopic = (topic: PilotTopic) => {
-    setChoices((prev) => ({ ...prev, topic }))
-    addUniqueInterest(TOPIC_LABELS[topic])
-    setLiveAnnouncement(`Objetivo selecionado: ${TOPIC_LABELS[topic]}`)
-  }
-
-  const handleSelectTime = (time: PilotTimeAvailable) => {
-    setChoices((prev) => ({ ...prev, time }))
-    addUniqueInterest(TIME_LABELS[time])
-    setLiveAnnouncement(`Tempo selecionado: ${TIME_LABELS[time]}`)
-  }
-
-  const handleSelectFormat = (format: PilotPreferredFormat) => {
-    setChoices((prev) => ({ ...prev, format }))
-    addUniqueInterest(FORMAT_LABELS[format])
-    setPreviewModelKey(format)
-    setLiveAnnouncement(`Formato selecionado: ${FORMAT_LABELS[format]}`)
-  }
-
-  // Step checkbox toggle
-  const handleToggleStep = (stepId: string) => {
-    setCheckedSteps((prev) => {
-      const updated = { ...prev, [stepId]: !prev[stepId] }
-      const isNowChecked = updated[stepId]
-      setLiveAnnouncement(isNowChecked ? 'Passo marcado como concluído' : 'Passo desmarcado')
-      return updated
-    })
-  }
-
-  // Free text submission
-  const handleProcessFreeText = () => {
-    const raw = freeText.trim()
-    if (!raw) return
-
-    const result = classifyFreeText(raw)
-    setClassificationResult(result)
-
-    // Clear input field and character counter immediately (privacy / no echoing)
-    setFreeText('')
-
-    // Move focus to the status/result heading after state updates
-    setTimeout(() => {
-      if (submitFeedbackRef.current) {
-        submitFeedbackRef.current.focus()
-      }
-    }, 50)
-
-    if (result.intent === 'restricted') {
-      setLiveAnnouncement('Aviso: o texto aborda tema fora do escopo desta demonstração.')
-      return
-    }
-
-    if (result.intent === 'unknown') {
-      setLiveAnnouncement(
-        'Texto livre não identificado por regras simples. Por favor, escolha um dos três caminhos disponíveis.',
-      )
-      return
-    }
-
-    if (result.suggestedPath) {
-      const isSwitching = selectedPath !== result.suggestedPath
-      setSelectedPath(result.suggestedPath)
-      if (isSwitching) {
-        setCheckedSteps({})
-      }
-
-      if (result.topic !== 'general') {
-        if (usePersonalization) {
-          setChoices((prev) => ({ ...prev, topic: result.topic }))
-          addUniqueInterest(TOPIC_LABELS[result.topic])
-        }
-      }
-
-      const pathNames: Record<PilotPath, string> = {
-        routine: 'Organizar minha rotina',
-        kit: 'Conhecer a ferramenta / kit',
-        guidance: 'Receber orientação de uso',
-      }
-      if (usePersonalization) {
-        addUniqueInterest(pathNames[result.suggestedPath])
-      }
-      setLiveAnnouncement(`Caminho sugerido por regra local: ${pathNames[result.suggestedPath]}`)
-    }
-  }
-
-  // Calculated values
-  const choicesCount = (choices.topic ? 1 : 0) + (choices.time ? 1 : 0) + (choices.format ? 1 : 0)
-  const currentFormatKey = resolveSuggestedModel(choices.topic, choices.format)
-  const currentMinutes = choices.time ? TIME_MINUTES_MAP[choices.time] : 5
-  const routineSteps = buildRoutineSteps(currentFormatKey, currentMinutes)
-  const completedRoutineStepsCount = routineSteps.filter((s) => checkedSteps[s.id]).length
-  const guidanceSteps = buildGuidanceSteps(currentFormatKey, currentMinutes)
+  }, [isAuthenticated, user])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col antialiased selection:bg-slate-200">
@@ -278,15 +66,10 @@ export default function PilotOrganizacaoPage() {
         href="#pilot-content"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 z-50 bg-slate-900 text-white px-4 py-2 rounded-md font-medium shadow-md"
       >
-        Pular para o conteúdo da demonstração
+        Pular para o conteúdo da página
       </a>
 
-      {/* Accessible Live Region for screen readers */}
-      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
-        {liveAnnouncement}
-      </div>
-
-      {/* Header específico do piloto */}
+      {/* Header restrito da ferramenta paga */}
       <header className="sticky top-0 z-30 w-full bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-2.5 sm:py-0 min-h-16 flex flex-wrap sm:flex-nowrap items-center justify-between gap-x-3 gap-y-2">
           <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 min-w-0">
@@ -294,23 +77,42 @@ export default function PilotOrganizacaoPage() {
               Organização Inteligente
             </span>
             <span
-              className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0"
-              aria-label="Ambiente Piloto e Demonstração"
+              className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-200 px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0"
+              aria-label="Produto em fase de preparação restrita"
             >
-              <Sparkles className="w-3 h-3 text-emerald-600 shrink-0" aria-hidden="true" />
-              PILOTO · DEMONSTRAÇÃO
+              <Sparkles className="w-3 h-3 text-slate-600 shrink-0" aria-hidden="true" />
+              PRODUTO PAGO · ÁREA RESTRITA
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={handleResetAll}
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 min-h-[36px] shrink-0"
-            aria-label="Recomeçar demonstração do início"
-          >
-            <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-            Recomeçar
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            {loading ? (
+              <span className="text-xs text-slate-500">Verificando sessão...</span>
+            ) : isAuthenticated ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-600 hidden sm:inline truncate max-w-[200px]">
+                  {user?.email || 'Usuário logado'}
+                </span>
+                <button
+                  type="button"
+                  onClick={signOut}
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                  aria-label="Sair da sessão"
+                >
+                  <LogOut className="w-3.5 h-3.5" aria-hidden="true" />
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="inline-flex items-center gap-1.5 text-xs font-medium bg-slate-900 text-white hover:bg-slate-800 px-3 py-1.5 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+              >
+                <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
+                Fazer login
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 
@@ -318,781 +120,236 @@ export default function PilotOrganizacaoPage() {
       <main
         id="pilot-content"
         role="main"
-        className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 space-y-8"
+        className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-10 space-y-8"
       >
         {/* Banner de transparência e limites */}
         <section
-          aria-labelledby="banner-title"
-          className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 sm:p-5 text-blue-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+          aria-labelledby="banner-transparency-title"
+          className="bg-blue-50/70 border border-blue-200/80 rounded-2xl p-4 sm:p-5 text-blue-950 flex items-start gap-3.5 shadow-2xs"
         >
-          <div className="flex items-start gap-3">
-            <ShieldCheck className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" aria-hidden="true" />
-            <div className="space-y-1">
-              <h2 id="banner-title" className="text-sm font-semibold">
-                Respostas prontas e dados fictícios. Nenhuma IA ou Jev conectado. Sem envio de
-                dados.
-              </h2>
-              <p className="text-xs text-blue-800/90 leading-relaxed">
-                Este módulo opera 100% no seu navegador com regras locais predefinidas. Nenhuma
-                informação digitada é salva, enviada ou transmitida.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0 pt-1 sm:pt-0">
-            <input
-              id={personalizeCheckboxId}
-              type="checkbox"
-              checked={usePersonalization}
-              onChange={(e) => handleTogglePersonalization(e.target.checked)}
-              className="w-4 h-4 text-slate-900 border-slate-300 rounded focus:ring-slate-900"
-            />
-            <label
-              htmlFor={personalizeCheckboxId}
-              className="text-xs font-medium text-slate-800 cursor-pointer"
-            >
-              Usar minhas escolhas nesta sessão
-            </label>
-          </div>
-        </section>
-
-        {/* Tags de interesses acumulados (se houver e personalização ligada) */}
-        {usePersonalization && userInterests.length > 0 && (
-          <section aria-label="Interesses selecionados nesta sessão" className="space-y-2">
-            <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">
-              Seus interesses identificados nesta sessão:
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {userInterests.map((interest) => (
-                <span
-                  key={interest}
-                  className="inline-flex items-center gap-1.5 text-xs font-medium bg-white text-slate-800 border border-slate-200 pl-2.5 pr-1.5 py-1 rounded-full shadow-2xs"
-                >
-                  {interest}
-                  <button
-                    type="button"
-                    onClick={() => removeInterest(interest)}
-                    className="p-0.5 text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-800"
-                    aria-label={`Remover interesse ${interest}`}
-                  >
-                    <X className="w-3 h-3" aria-hidden="true" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Aviso de tema restrito se acionado por texto livre */}
-        {classificationResult?.intent === 'restricted' && (
-          <div
-            ref={submitFeedbackRef}
-            tabIndex={-1}
-            role="alert"
-            aria-live="polite"
-            className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 sm:p-5 space-y-2 focus:outline-none focus:ring-2 focus:ring-amber-500"
-          >
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
-              <div>
-                <h3 className="text-sm font-semibold text-amber-950">
-                  Tema fora do escopo desta demonstração
-                </h3>
-                <p className="text-xs sm:text-sm text-amber-800 mt-1 leading-relaxed">
-                  {classificationResult.restrictedReason}
-                </p>
-                <p className="text-xs text-amber-700 mt-2 font-medium">
-                  Para continuar a exploração de métodos de organização pessoal, escolha um dos
-                  caminhos disponíveis:
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Aviso de texto desconhecido */}
-        {classificationResult?.intent === 'unknown' && (
-          <div
-            ref={submitFeedbackRef}
-            tabIndex={-1}
-            role="alert"
-            aria-live="polite"
-            className="bg-slate-100 border border-slate-200 text-slate-800 rounded-2xl p-4 space-y-1 focus:outline-none focus:ring-2 focus:ring-slate-500"
-          >
-            <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-slate-600" aria-hidden="true" />
-              <p className="text-xs sm:text-sm font-medium">
-                Não identificamos palavras-chave conhecidas no texto. Por favor, escolha um dos 3
-                caminhos disponíveis para iniciar sua experiência.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Seção 1: Ponto de partida (Caminhos) */}
-        <section aria-labelledby="start-title" className="space-y-4">
+          <ShieldCheck className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" aria-hidden="true" />
           <div className="space-y-1">
-            <h1
-              id="start-title"
-              className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900"
-            >
-              Por onde você quer começar?
-            </h1>
-            <p className="text-sm sm:text-base text-slate-600">
-              Conte o que procura ou escolha um caminho.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <button
-              type="button"
-              aria-pressed={selectedPath === 'routine'}
-              onClick={() => handleSelectPath('routine')}
-              className={`text-left p-5 rounded-2xl border transition-all duration-200 min-h-[120px] flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
-                selectedPath === 'routine'
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-900'
-                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-xs'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-base sm:text-lg">Organizar minha rotina</span>
-                <Clock
-                  className={`w-5 h-5 shrink-0 ${
-                    selectedPath === 'routine' ? 'text-white' : 'text-slate-500'
-                  }`}
-                  aria-hidden="true"
-                />
-              </div>
-              <p
-                className={`text-xs sm:text-sm mt-2 leading-relaxed ${
-                  selectedPath === 'routine' ? 'text-slate-300' : 'text-slate-500'
-                }`}
-              >
-                Tempo, prioridades e constância para o dia a dia.
-              </p>
-            </button>
-
-            <button
-              type="button"
-              aria-pressed={selectedPath === 'kit'}
-              onClick={() => handleSelectPath('kit')}
-              className={`text-left p-5 rounded-2xl border transition-all duration-200 min-h-[120px] flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
-                selectedPath === 'kit'
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-900'
-                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-xs'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-base sm:text-lg">
-                  Conhecer a ferramenta / kit
-                </span>
-                <BookOpen
-                  className={`w-5 h-5 shrink-0 ${
-                    selectedPath === 'kit' ? 'text-white' : 'text-slate-500'
-                  }`}
-                  aria-hidden="true"
-                />
-              </div>
-              <p
-                className={`text-xs sm:text-sm mt-2 leading-relaxed ${
-                  selectedPath === 'kit' ? 'text-slate-300' : 'text-slate-500'
-                }`}
-              >
-                Explorar formatos e modelos editoriais de organização.
-              </p>
-            </button>
-
-            <button
-              type="button"
-              aria-pressed={selectedPath === 'guidance'}
-              onClick={() => handleSelectPath('guidance')}
-              className={`text-left p-5 rounded-2xl border transition-all duration-200 min-h-[120px] flex flex-col justify-between focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 ${
-                selectedPath === 'guidance'
-                  ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-900'
-                  : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 shadow-xs'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-semibold text-base sm:text-lg">
-                  Receber orientação de uso
-                </span>
-                <Compass
-                  className={`w-5 h-5 shrink-0 ${
-                    selectedPath === 'guidance' ? 'text-white' : 'text-slate-500'
-                  }`}
-                  aria-hidden="true"
-                />
-              </div>
-              <p
-                className={`text-xs sm:text-sm mt-2 leading-relaxed ${
-                  selectedPath === 'guidance' ? 'text-slate-300' : 'text-slate-500'
-                }`}
-              >
-                Experimentar um passo estruturado de cada vez.
-              </p>
-            </button>
-          </div>
-        </section>
-
-        {/* Seção 2: Campo opcional de texto livre */}
-        <section
-          aria-labelledby="free-text-title"
-          className="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-xs"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <h2 id="free-text-title" className="text-sm font-semibold text-slate-900">
-              Quer descrever o que você precisa agora? (Opcional)
+            <h2 id="banner-transparency-title" className="text-sm font-semibold">
+              Ambiente de Apresentação e Demonstração · Nenhuma IA ativa ou conectada em produção
             </h2>
-            <span className="text-xs text-slate-500" aria-live="polite">
-              {freeText.length}/300 caracteres
-            </span>
-          </div>
-
-          <label htmlFor={textInputId} className="sr-only">
-            Exemplo de rotina ou objetivo que você quer facilitar
-          </label>
-          <textarea
-            id={textInputId}
-            value={freeText}
-            onChange={(e) => setFreeText(e.target.value.slice(0, 300))}
-            maxLength={300}
-            rows={2}
-            placeholder="Ex.: Gostaria de organizar minha semana e definir prioridades..."
-            className="w-full text-sm p-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none transition-colors"
-          />
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-            <p className="text-xs text-slate-500">
-              Use apenas exemplos fictícios. Não informe dados pessoais.
+            <p className="text-xs text-blue-800/90 leading-relaxed">
+              Esta página apresenta a futura área de acesso à ferramenta de IA de Organização
+              Inteligente. Não há envio de dados a provedores externos de IA nem processamento de
+              dados não autorizados.
             </p>
-
-            <button
-              type="button"
-              disabled={!freeText.trim()}
-              onClick={handleProcessFreeText}
-              className="inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 disabled:bg-slate-300 disabled:text-slate-500 px-4 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 min-h-[38px]"
-            >
-              Encontrar meu caminho
-              <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-            </button>
           </div>
         </section>
 
-        {/* Seção 3: Fluxo de Escolhas (comum a todos os caminhos) */}
+        {/* Card Principal de Apresentação da Área Paga */}
         <section
-          aria-labelledby="choices-title"
-          className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-6 shadow-xs"
+          aria-labelledby="product-title"
+          className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs"
         >
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <h2 id="choices-title" className="text-lg font-bold text-slate-900">
-                Ajuste seu momento
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500">
-                Três perguntas rápidas para calibrar os exemplos e o tempo da demonstração.
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-semibold">
+              <Lock className="w-3.5 h-3.5 text-slate-600" aria-hidden="true" />
+              Área de Membros · Acesso Exclusivo
+            </div>
+            <h1
+              id="product-title"
+              className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900"
+            >
+              Ferramenta de IA de Organização Inteligente
+            </h1>
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+              A <strong>ferramenta de IA de Organização Inteligente</strong> é um{' '}
+              <strong>produto pago separado do Kit</strong>, acessível exclusivamente pela área de
+              membros com login e direito de acesso pago confirmado.
+            </p>
+          </div>
+
+          {/* Destaques conceituais obrigatórios (sem inventar preço ou periodicidade) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-900">
+                <Layers className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <h3 className="text-xs sm:text-sm font-semibold text-slate-900">
+                Produto Pago Separado
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Totalmente independente do Kit de Organização. A aquisição de um não condiciona nem
+                inclui o outro.
               </p>
             </div>
-            <div
-              className="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-xs font-semibold"
-              aria-label={`Progresso das escolhas: ${choicesCount} de 3 selecionadas`}
-            >
-              <span>Progresso:</span>
-              <span className="text-slate-900">{choicesCount}/3</span>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-900">
+                <UserCheck className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <h3 className="text-xs sm:text-sm font-semibold text-slate-900">
+                Área de Membros com Login
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Acesso vinculado à conta de usuário com verificação rigorosa de credenciais e
+                sessão.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-900">
+                <Clock className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <h3 className="text-xs sm:text-sm font-semibold text-slate-900">
+                Direito Pago Confirmado
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Preço e periodicidade ainda serão definidos formalmente pela equipe gestora.
+              </p>
             </div>
           </div>
 
-          <div className="space-y-6">
-            {/* Pergunta 1: Objetivo */}
-            <fieldset className="space-y-2.5">
-              <legend className="text-sm font-semibold text-slate-800">
-                1. O que você quer facilitar?
-              </legend>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {[
-                  { key: 'time' as PilotTopic, label: 'Distribuir meu tempo' },
-                  { key: 'priorities' as PilotTopic, label: 'Definir prioridades' },
-                  { key: 'consistency' as PilotTopic, label: 'Criar constância' },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    aria-pressed={choices.topic === item.key}
-                    onClick={() => handleSelectTopic(item.key)}
-                    className={`text-center py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 min-h-[44px] ${
-                      choices.topic === item.key
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
+          {/* Bloco de Estado de Autorização (Fail-Closed Honesto) */}
+          <div className="border-t border-slate-100 pt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-slate-500">
+                Situação do seu acesso
+              </h2>
+              <span
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                  authzDecision.state === 'anonymous'
+                    ? 'bg-amber-50 text-amber-900 border border-amber-200'
+                    : authzDecision.state === 'authenticated-unpaid'
+                      ? 'bg-blue-50 text-blue-900 border border-blue-200'
+                      : 'bg-slate-100 text-slate-800 border border-slate-200'
+                }`}
+              >
+                <Lock className="w-3 h-3" aria-hidden="true" />
+                {authzDecision.state === 'anonymous'
+                  ? 'Não autenticado (Login necessário)'
+                  : authzDecision.state === 'authenticated-unpaid'
+                    ? 'Autenticado · Liberação em preparação'
+                    : 'Acesso restrito'}
+              </span>
+            </div>
 
-            {/* Pergunta 2: Tempo */}
-            <fieldset className="space-y-2.5">
-              <legend className="text-sm font-semibold text-slate-800">
-                2. Quanto tempo cabe agora?
-              </legend>
-              <div className="grid grid-cols-3 gap-2.5">
-                {[
-                  { key: '5m' as PilotTimeAvailable, label: '5 minutos' },
-                  { key: '10m' as PilotTimeAvailable, label: '10 minutos' },
-                  { key: '20m' as PilotTimeAvailable, label: '20 minutos' },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    aria-pressed={choices.time === item.key}
-                    onClick={() => handleSelectTime(item.key)}
-                    className={`text-center py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 min-h-[44px] ${
-                      choices.time === item.key
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            {/* Pergunta 3: Formato */}
-            <fieldset className="space-y-2.5">
-              <legend className="text-sm font-semibold text-slate-800">
-                3. Qual formato prefere experimentar?
-              </legend>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {[
-                  { key: 'priorities' as PilotPreferredFormat, label: 'Uma lista curta' },
-                  { key: 'week' as PilotPreferredFormat, label: 'Uma visão da semana' },
-                  { key: 'steps' as PilotPreferredFormat, label: 'Um passo de cada vez' },
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    aria-pressed={choices.format === item.key}
-                    onClick={() => handleSelectFormat(item.key)}
-                    className={`text-center py-2.5 px-3 rounded-xl border text-xs sm:text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 min-h-[44px] ${
-                      choices.format === item.key
-                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                        : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-          </div>
-        </section>
-
-        {/* Seção 4: Resultado Dinâmico de acordo com o caminho ativo */}
-        {selectedPath === 'routine' && (
-          <section
-            aria-labelledby="routine-result-title"
-            className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-xs"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-              <div>
-                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Sugestão baseada em {EDITORIAL_CATALOG[currentFormatKey].name}
-                </span>
-                <h2
-                  id="routine-result-title"
-                  ref={submitFeedbackRef}
-                  tabIndex={-1}
-                  className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5 focus:outline-none focus:ring-2 focus:ring-slate-900 rounded-sm"
-                >
-                  Um começo em {currentMinutes} minutos
-                </h2>
-              </div>
+            {/* Caso 1: Usuário Anônimo (sem sessão) */}
+            {!isAuthenticated && (
               <div
-                className="inline-flex items-center gap-2 bg-slate-100 text-slate-800 px-3.5 py-1.5 rounded-full text-xs font-semibold shrink-0"
-                aria-label={`Passos concluídos: ${completedRoutineStepsCount} de 3`}
+                role="region"
+                aria-label="Aviso de login necessário"
+                className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4"
               >
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" aria-hidden="true" />
-                <span>Passos concluídos: {completedRoutineStepsCount} de 3</span>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {routineSteps.map((step) => {
-                const isChecked = !!checkedSteps[step.id]
-                return (
-                  <div
-                    key={step.id}
-                    className={`flex items-start gap-3.5 p-4 rounded-xl border transition-colors ${
-                      isChecked
-                        ? 'bg-emerald-50/50 border-emerald-200 text-slate-900'
-                        : 'bg-slate-50 border-slate-200 hover:bg-slate-100/70 text-slate-800'
-                    }`}
-                  >
-                    <input
-                      id={step.id}
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => handleToggleStep(step.id)}
-                      className="w-5 h-5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500 mt-0.5 cursor-pointer"
-                    />
-                    <label
-                      htmlFor={step.id}
-                      className="cursor-pointer space-y-0.5 select-none flex-1"
-                    >
-                      <p
-                        className={`text-sm font-semibold ${isChecked ? 'line-through text-slate-500' : ''}`}
-                      >
-                        {step.text}
-                      </p>
-                      <p className="text-xs text-slate-500 leading-relaxed">{step.detail}</p>
-                    </label>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-600">
-              <span className="font-semibold text-slate-800">Nota:</span> Esta rotina é uma
-              simulação adaptável para destravar o início de forma leve. Você pode desmarcar e
-              repetir conforme sua disponibilidade.
-            </div>
-          </section>
-        )}
-
-        {selectedPath === 'guidance' && (
-          <section
-            aria-labelledby="guidance-result-title"
-            className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-xs"
-          >
-            <div className="border-b border-slate-100 pb-4">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Roteiro Local de Uso
-              </span>
-              <h2
-                id="guidance-result-title"
-                ref={submitFeedbackRef}
-                tabIndex={-1}
-                className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5 focus:outline-none focus:ring-2 focus:ring-slate-900 rounded-sm"
-              >
-                Orientação passo a passo ({currentMinutes} minutos)
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                Um roteiro simples para testar a estrutura da{' '}
-                {EDITORIAL_CATALOG[currentFormatKey].name}.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {guidanceSteps.map((step) => (
-                <div
-                  key={step.stepNumber}
-                  className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex flex-col justify-between space-y-3"
-                >
-                  <div className="space-y-2">
-                    <span className="inline-flex items-center justify-center w-7 h-7 bg-slate-900 text-white rounded-full font-bold text-xs">
-                      {step.stepNumber}
-                    </span>
-                    <h3 className="font-bold text-sm text-slate-900">{step.title}</h3>
-                    <p className="text-xs text-slate-600 leading-relaxed">{step.description}</p>
-                  </div>
-                  <div className="pt-2 text-[11px] text-slate-500 border-t border-slate-200/60 font-medium">
-                    Demonstração editorial guiada
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {selectedPath === 'kit' && (
-          <section
-            aria-labelledby="kit-result-title"
-            className="bg-white border border-slate-200 rounded-2xl p-6 space-y-6 shadow-xs"
-          >
-            <div className="border-b border-slate-100 pb-4 space-y-1">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Catálogo de Demonstração
-              </span>
-              <h2
-                id="kit-result-title"
-                ref={submitFeedbackRef}
-                tabIndex={-1}
-                className="text-xl sm:text-2xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900 rounded-sm"
-              >
-                Amostras Editoriais Fictícias
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-600">
-                Explore a estrutura dos três modelos conceituais. Amostras ilustrativas sem preço ou
-                compra.
-              </p>
-            </div>
-
-            {/* Alternar amostras com role="group" e aria-pressed (Tab + Enter/Space) */}
-            <div
-              className="flex flex-wrap gap-2"
-              role="group"
-              aria-label="Formatos do catálogo editorial"
-            >
-              {KIT_SAMPLES.map((sample) => (
-                <button
-                  key={sample.key}
-                  type="button"
-                  aria-pressed={previewModelKey === sample.key}
-                  onClick={() => setPreviewModelKey(sample.key)}
-                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 min-h-[40px] ${
-                    previewModelKey === sample.key
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                  }`}
-                >
-                  {sample.name.replace(' (Amostra Fictícia)', '')}
-                </button>
-              ))}
-            </div>
-
-            {/* Exibição da amostra selecionada */}
-            {(() => {
-              const currentSample =
-                KIT_SAMPLES.find((s) => s.key === previewModelKey) || KIT_SAMPLES[0]
-              const editorialInfo = EDITORIAL_CATALOG[previewModelKey]
-
-              return (
-                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-3">
-                    <div>
-                      <h3 className="font-bold text-base sm:text-lg text-slate-900">
-                        {currentSample.name}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-600">{editorialInfo.subtitle}</p>
-                    </div>
-                    <span className="inline-block text-xs font-semibold bg-white border border-slate-200 text-slate-700 px-3 py-1 rounded-full w-fit">
-                      {currentSample.badge}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Estrutura do Modelo:
-                    </h4>
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs sm:text-sm text-slate-700">
-                      {currentSample.structure.map((item, idx) => (
-                        <li
-                          key={idx}
-                          className="flex items-center gap-2 bg-white border border-slate-200/70 p-2.5 rounded-lg"
-                        >
-                          <CheckCircle2
-                            className="w-4 h-4 text-slate-500 shrink-0"
-                            aria-hidden="true"
-                          />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-1">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Exemplo Fictício de Uso:
-                    </span>
-                    <p className="text-xs sm:text-sm text-slate-800 leading-relaxed font-mono">
-                      {currentSample.sampleText}
+                <div className="flex items-start gap-3">
+                  <AlertTriangle
+                    className="w-5 h-5 text-slate-500 mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Login e confirmação de acesso necessários
+                    </p>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Para acessar a ferramenta quando disponível, será necessário possuir uma conta
+                      na área de membros e confirmação de pagamento ativo. Se você já possui uma
+                      conta cadastrada, pode entrar usando o formulário oficial.
                     </p>
                   </div>
-
-                  <div className="p-3.5 bg-amber-50/70 border border-amber-200/80 rounded-xl text-xs text-amber-900 leading-relaxed">
-                    <strong>Aviso de Demonstração:</strong> Os materiais exibidos nesta tela são
-                    amostras conceituais fictícias e não representam oferta comercial,
-                    disponibilidade de estoque, composição contratual ou promessa de entrega do Kit
-                    comercial real. Não há preço, venda nem checkout nesta demonstração.
-                  </div>
                 </div>
-              )
-            })()}
-          </section>
-        )}
 
-        {/* Seção 5: Seção Técnica Recolhida - Teste do adaptador Jev (simulado) */}
-        <section
-          aria-labelledby="jev-adapter-test-title"
-          className="border border-slate-200 rounded-2xl bg-white shadow-2xs overflow-hidden"
-        >
-          <button
-            type="button"
-            onClick={() => setIsJevSectionOpen((prev) => !prev)}
-            aria-expanded={isJevSectionOpen}
-            aria-controls="jev-adapter-test-content"
-            className="w-full flex items-center justify-between p-4 sm:p-5 text-left bg-slate-50/70 hover:bg-slate-100/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
-          >
-            <div className="flex items-center gap-2.5 min-w-0 pr-2">
-              <Cpu className="w-4 h-4 text-slate-600 shrink-0" aria-hidden="true" />
-              <div className="min-w-0">
-                <h2
-                  id="jev-adapter-test-title"
-                  className="text-xs sm:text-sm font-semibold text-slate-900 truncate"
-                >
-                  Teste do adaptador Jev (simulado)
-                </h2>
-                <p className="text-[11px] text-slate-500 truncate">
-                  Validação técnica do contrato TypeSafe Choice com fixtures fixas (sem rede)
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0 text-slate-500">
-              <span className="text-[11px] font-medium hidden sm:inline">
-                {isJevSectionOpen ? 'Recolher' : 'Expandir'}
-              </span>
-              {isJevSectionOpen ? (
-                <ChevronUp className="w-4 h-4" aria-hidden="true" />
-              ) : (
-                <ChevronDown className="w-4 h-4" aria-hidden="true" />
-              )}
-            </div>
-          </button>
-
-          {isJevSectionOpen && (
-            <div
-              id="jev-adapter-test-content"
-              className="p-4 sm:p-6 border-t border-slate-200 space-y-5"
-            >
-              {/* Aviso obrigatório de transparência */}
-              <div
-                role="note"
-                className="bg-amber-50/80 border border-amber-200/90 rounded-xl p-3.5 text-xs text-amber-950 space-y-1"
-              >
-                <div className="flex items-center gap-2 font-semibold">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
-                  <span>Aviso técnico obrigatório</span>
-                </div>
-                <p className="leading-relaxed">
-                  <strong>
-                    Contrato preparado. API Jev não conectada. Não mede acurácia do modelo.
-                  </strong>{' '}
-                  Este módulo avalia estritamente as regras de contrato, esquema e distribuição de
-                  probabilidades em memória local com 6 casos sintéticos fixos. Não aceita texto
-                  livre, não acessa rede nem mede a acurácia real do modelo de IA.
-                </p>
-              </div>
-
-              {/* Botão de execução local */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                <div>
-                  <h3 className="text-xs sm:text-sm font-semibold text-slate-900">
-                    Execução de Casos Sintéticos Fixos
-                  </h3>
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <Link
+                    to="/login"
+                    className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 px-4 py-2.5 rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                  >
+                    Ir para tela de Login
+                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                  </Link>
                   <p className="text-[11px] text-slate-500">
-                    6 categorias cobrindo regras de validação estrita e limiar provisório (
-                    {JEV_PROVISIONAL_CONFIDENCE_THRESHOLD}).
+                    O login utiliza autenticação real do sistema. Não há liberação simulada por
+                    links ou formulários fictícios.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleRunSimulation}
-                  className="inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-medium px-4 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 shrink-0 min-h-[38px]"
-                >
-                  <Cpu className="w-3.5 h-3.5" aria-hidden="true" />
-                  Executar testes simulados
-                </button>
               </div>
+            )}
 
-              {/* Resultados da simulação */}
-              {simulationResults && (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-700">
-                      Resultado da Avaliação Local ({simulationResults.length} casos)
-                    </span>
-                    <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                      6/6 conformes com a especificação
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-3">
-                    {simulationResults.map(({ fixture, adapterResult }) => {
-                      const decisionBadge = {
-                        approved: {
-                          label: 'Aprovado',
-                          bg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-                        },
-                        review: {
-                          label: 'Revisão',
-                          bg: 'bg-amber-50 text-amber-800 border-amber-200',
-                        },
-                        blocked: {
-                          label: 'Bloqueado',
-                          bg: 'bg-rose-50 text-rose-800 border-rose-200',
-                        },
-                      }[adapterResult.decision]
-
-                      return (
-                        <div
-                          key={fixture.id}
-                          className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 space-y-2 text-xs"
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <span className="font-semibold text-slate-900">{fixture.label}</span>
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold border text-[11px] uppercase tracking-wider ${decisionBadge.bg}`}
-                            >
-                              {adapterResult.decision === 'approved' && (
-                                <Check className="w-3 h-3" aria-hidden="true" />
-                              )}
-                              {adapterResult.decision === 'review' && (
-                                <AlertTriangle className="w-3 h-3" aria-hidden="true" />
-                              )}
-                              {adapterResult.decision === 'blocked' && (
-                                <AlertCircle className="w-3 h-3" aria-hidden="true" />
-                              )}
-                              {decisionBadge.label}
-                            </span>
-                          </div>
-
-                          <p className="text-slate-600 leading-relaxed">{fixture.description}</p>
-
-                          <div className="bg-white border border-slate-200/80 rounded-lg p-2.5 space-y-1 text-[11px] text-slate-700 font-mono">
-                            <div>
-                              <strong>Decisão do adaptador:</strong> {adapterResult.decision} (
-                              {decisionBadge.label})
-                            </div>
-                            <div>
-                              <strong>Motivo:</strong> {adapterResult.decisionReason}
-                            </div>
-                            <div>
-                              <strong>Intenção / Tópico:</strong> {adapterResult.intent} /{' '}
-                              {adapterResult.topic}
-                            </div>
-                            {adapterResult.validationErrors.length > 0 && (
-                              <div className="text-rose-700">
-                                <strong>Erros de validação detectados:</strong>{' '}
-                                {adapterResult.validationErrors.join('; ')}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )
-                    })}
+            {/* Caso 2: Usuário Autenticado, mas sem entitlement pago confirmado (fail-closed) */}
+            {isAuthenticated && (
+              <div
+                role="region"
+                aria-label="Aviso de liberação em preparação"
+                className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-4"
+              >
+                <div className="flex items-start gap-3">
+                  <FileCheck2
+                    className="w-5 h-5 text-blue-600 mt-0.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Conta autenticada: {user?.email || 'Membro'}
+                    </p>
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      Sua conta está conectada à área de membros. No entanto,{' '}
+                      <strong>o mecanismo de contratação e liberação de acesso pago</strong> ainda
+                      está em fase de definição e preparação pela equipe técnica. O preço e a
+                      periodicidade do produto ainda serão divulgados.
+                    </p>
                   </div>
                 </div>
-              )}
-            </div>
-          )}
+
+                <div className="p-3.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-700 space-y-1">
+                  <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 text-slate-500" aria-hidden="true" />
+                    Status da Liberação:
+                  </div>
+                  <p className="text-slate-600 leading-relaxed">
+                    Nenhum direito de acesso pago ativo foi localizado para o usuário{' '}
+                    <code>{user?.id}</code>. A ferramenta permanece bloqueada por padrão
+                    (fail-closed) até a publicação oficial das regras de assinatura e checkout.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </section>
 
-        {/* Seção 6: Explicações Técnicas e Limites da Demonstração */}
-        <footer className="pt-6 border-t border-slate-200 text-xs text-slate-500 space-y-3 leading-relaxed">
-          <div className="flex items-start gap-2">
-            <Info className="w-4 h-4 text-slate-400 mt-0.5 shrink-0" aria-hidden="true" />
-            <p>
-              <strong>Sobre esta demonstração:</strong> A classificação de intenção do piloto é
-              operada exclusivamente pelo classificador local em memória React, sem conexão a
-              modelos de linguagem ou servidores externos. As respostas apresentadas são
-              exclusivamente editoriais. O contrato do adaptador Jev encontra-se preparado em código
-              estritamente tipado, mas a API Jev permanece não conectada. Não há processamento de
-              voz, gravação de áudio nem coleta de dados pessoais nesta fase.
-            </p>
-          </div>
-          <p className="text-center text-[11px] text-slate-400">
-            Organização Inteligente · Demonstração Técnica Restrita (Preview)
+        {/* Informações Institucionais e Políticas de Separação */}
+        <section
+          aria-labelledby="policy-info-title"
+          className="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xs"
+        >
+          <h2 id="policy-info-title" className="text-sm font-bold text-slate-900">
+            Diretrizes de Acesso e Contratação
+          </h2>
+          <ul className="space-y-2.5 text-xs text-slate-600 leading-relaxed">
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 shrink-0" />
+              <span>
+                <strong>Separação completa do Kit:</strong> A compra do Kit de Organização
+                Inteligente concede acesso aos seus materiais e apostilas editoriais próprios, não
+                concedendo acesso automático à ferramenta de inteligência artificial.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 shrink-0" />
+              <span>
+                <strong>Preço e periodicidade a definir:</strong> Nenhuma condição comercial foi
+                estipulada de forma definitiva. Valores, planos (mensal, anual ou vitalício) e
+                formas de pagamento serão anunciados nos canais oficiais.
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 mt-1.5 shrink-0" />
+              <span>
+                <strong>Segurança e integridade:</strong> O acesso não pode ser concedido por
+                parâmetros de URL, armazenamento local (localStorage) ou atalhos não confirmados.
+                Toda liberação dependerá de conferência formal no backend.
+              </span>
+            </li>
+          </ul>
+        </section>
+
+        {/* Rodapé técnico da página */}
+        <footer className="pt-4 border-t border-slate-200 text-xs text-slate-500 space-y-2 text-center">
+          <p>Organização Inteligente · Área Restrita do Piloto de IA (Preview) · Versão 0.0.68</p>
+          <p className="text-[11px] text-slate-400">
+            Este módulo opera estritamente em conformidade com as regras de negação por padrão.
           </p>
         </footer>
       </main>

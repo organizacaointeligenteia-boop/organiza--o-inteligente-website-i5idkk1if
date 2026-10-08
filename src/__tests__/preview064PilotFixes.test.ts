@@ -57,84 +57,58 @@ describe('Pilot Frontend 0.0.64 - Regressões e Correções de QA', () => {
     })
   })
 
-  describe('2. Idempotência do Caminho Ativo', () => {
-    it('o manipulador de seleção de caminho preserva escolhas se o caminho já estiver selecionado', () => {
-      const pageSource = fs.readFileSync(
-        path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
-        'utf-8',
-      )
-
-      // Verifica presença da lógica idempotente:
-      // se selectedPath === path, não reseta checkedSteps
-      expect(pageSource).toContain('if (selectedPath === path)')
-      expect(pageSource).toContain('Caminho mantido:')
-      expect(pageSource).not.toMatch(
-        /const handleSelectPath = \([a-zA-Z]+\) => \{\s*setSelectedPath\([a-zA-Z]+\)\s*setCheckedSteps\(\{\}\)/,
-      )
+  describe('2. Integridade dos Modelos Editoriais e Catálogo Preservado', () => {
+    it('as funções do catálogo continuam puras e utilizáveis sem acoplamento a UI externa', () => {
+      const steps = buildRoutineSteps('priorities', 10)
+      expect(steps).toHaveLength(3)
+      expect(TIME_MINUTES_MAP['10m']).toBe(10)
     })
   })
 
-  describe('3. Semântica dos Materiais Fictícios (role="group" + aria-pressed)', () => {
-    it('removeu tablist/tab e substituiu por botões nativos num role="group" com aria-pressed acessíveis por Tab + Enter/Space', () => {
+  describe('3. Proteção e Fail-Closed na Apresentação da Área Paga', () => {
+    it('PilotOrganizacaoPage não contém campos de entrada livre de texto de visitante nem painel de auto-liberação', () => {
       const pageSource = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
       )
 
-      expect(pageSource).not.toContain('role="tablist"')
-      expect(pageSource).not.toContain('role="tab"')
-      expect(pageSource).toContain('role="group"')
-      expect(pageSource).toContain('aria-pressed={previewModelKey === sample.key}')
+      expect(pageSource).not.toContain('<textarea')
+      expect(pageSource).not.toContain('Encontrar meu caminho')
+      expect(pageSource).not.toContain('Teste do adaptador Jev (simulado)')
+    })
+
+    it('PilotOrganizacaoPage exige login oficial ou aponta para rota real /login', () => {
+      const pageSource = fs.readFileSync(
+        path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
+        'utf-8',
+      )
+
+      expect(pageSource).toContain('to="/login"')
+      expect(pageSource).toContain('useAuth()')
+      expect(pageSource).toContain('resolveAuthorization')
     })
   })
 
-  describe('4. Gerência de Foco pós-submit, Opt-out e Reset', () => {
-    it('possui ref de foco (submitFeedbackRef), tabIndex={-1} e aria-live nos elementos de resultado/status', () => {
+  describe('4. Preservação dos Limites e Semântica Institucional', () => {
+    it('afirma explicitamente que a ferramenta é produto pago separado do Kit', () => {
       const pageSource = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
       )
 
-      expect(pageSource).toContain('submitFeedbackRef')
-      expect(pageSource).toContain('ref={submitFeedbackRef}')
-      expect(pageSource).toContain('tabIndex={-1}')
-      expect(pageSource).toContain('submitFeedbackRef.current.focus()')
+      expect(pageSource).toContain('produto pago separado do Kit')
+      expect(pageSource).toContain('Preço e periodicidade ainda serão definidos')
     })
 
-    it('opt-out limpa marcações, texto, interesses, escolhas e seleção de material, sem reativar personalização', () => {
+    it('mantém isolamento estrito sem liberação insegura por localStorage ou query string', () => {
       const pageSource = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
       )
 
-      // Na desativação da personalização (checked === false):
-      expect(pageSource).toContain("setFreeText('')")
-      expect(pageSource).toContain("setPreviewModelKey('priorities')")
-      expect(pageSource).toContain('setCheckedSteps({})')
-      expect(pageSource).toContain('setUserInterests([])')
-      expect(pageSource).toContain('setChoices({})')
-      expect(pageSource).toContain('setClassificationResult(null)')
-    })
-  })
-
-  describe('5. Texto do Fallback e Preservação de Privacidade', () => {
-    it('trocou "botões abaixo" por "caminhos disponíveis"', () => {
-      const pageSource = fs.readFileSync(
-        path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
-        'utf-8',
-      )
-
-      expect(pageSource).not.toContain('botões abaixo')
-      expect(pageSource).toContain('caminhos disponíveis')
-    })
-
-    it('mantém garantia de limpeza do campo após submit de texto livre sem repetição nem transmissão', () => {
-      const pageSource = fs.readFileSync(
-        path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
-        'utf-8',
-      )
-
-      expect(pageSource).toContain("setFreeText('')")
+      expect(pageSource).not.toContain('localStorage')
+      expect(pageSource).not.toContain('sessionStorage')
+      expect(pageSource).not.toContain('location.search')
     })
   })
 

@@ -262,7 +262,7 @@ describe('Pilot Frontend 0.0.63 - Piloto de Demonstração', () => {
   })
 
   describe('5. Ausência de Persistência, Conexões Externas e Rede no Módulo do Piloto', () => {
-    it('o código do piloto não usa localStorage, sessionStorage ou cookies', () => {
+    it('o código do piloto não usa localStorage, sessionStorage ou cookies para liberação', () => {
       const pageCode = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
@@ -272,11 +272,9 @@ describe('Pilot Frontend 0.0.63 - Piloto de Demonstração', () => {
       expect(pageCode).not.toContain('document.cookie')
       expect(pageCode).not.toContain('fetch(')
       expect(pageCode).not.toContain('axios')
-      expect(pageCode).not.toContain('pocketbase')
-      expect(pageCode).not.toContain('pb.')
     })
 
-    it('o módulo do piloto não contém checkout, preço nem links de compra', () => {
+    it('o módulo do piloto não contém checkout, preço inventado nem links de compra', () => {
       const pageCode = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
@@ -287,16 +285,14 @@ describe('Pilot Frontend 0.0.63 - Piloto de Demonstração', () => {
       expect(pageCode).not.toContain('checkout')
     })
 
-    it('o módulo do piloto declara explicitamente os avisos de ausência de IA/Jev e dados fictícios', () => {
+    it('o módulo do piloto declara explicitamente os avisos de ausência de IA ativa em produção e dados de apresentação', () => {
       const pageCode = fs.readFileSync(
         path.resolve(process.cwd(), 'src/pilot/PilotOrganizacaoPage.tsx'),
         'utf-8',
       )
-      expect(pageCode).toContain(
-        'Respostas prontas e dados fictícios. Nenhuma IA ou Jev conectado. Sem envio de dados.',
-      )
-      expect(pageCode).toContain('PILOTO · DEMONSTRAÇÃO')
-      expect(pageCode).toContain('Use apenas exemplos fictícios. Não informe dados pessoais.')
+      expect(pageCode).toContain('Nenhuma IA ativa ou conectada em produção')
+      expect(pageCode).toContain('PRODUTO PAGO · ÁREA RESTRITA')
+      expect(pageCode).toContain('produto pago separado do Kit')
     })
   })
 })
